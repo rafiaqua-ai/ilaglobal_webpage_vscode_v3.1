@@ -105,6 +105,9 @@ export default function HRConsultantHub() {
           return { ...c, stage: 'Document Verification' }
         } else if (c.stage === 'Document Verification') {
           // Automatically register staff member upon completing verification & generating ID
+          const nextIdNum = Math.floor(Math.random() * 9000) + 1000;
+          const generatedId = `STAFF-${c.position.substring(0,2).toUpperCase()}-${nextIdNum}`;
+          
           saveStaffMember({
             name: c.name,
             email: c.email,
@@ -112,9 +115,11 @@ export default function HRConsultantHub() {
             department: c.position as any,
             phone: c.phone,
             status: 'Active',
-            joiningDate: new Date().toLocaleDateString()
+            joiningDate: new Date().toLocaleDateString(),
+            hrApprovalStatus: 'Verified',
+            hrIssuedId: generatedId
           })
-          alert(`Verification passed! Corporate ID & Access generated for ${c.name}.`)
+          alert(`Verification passed! Corporate ID (${generatedId}) & Access generated for ${c.name}.`)
           return { ...c, stage: 'ID Generated', status: 'Approved' }
         }
       }
@@ -125,6 +130,10 @@ export default function HRConsultantHub() {
   const handleAddInternalStaff = (e: React.FormEvent) => {
     e.preventDefault()
     if (!newName.trim() || !newEmail.trim()) return
+    
+    const nextIdNum = Math.floor(Math.random() * 9000) + 1000;
+    const generatedId = `STAFF-${newDept.substring(0,2).toUpperCase()}-${nextIdNum}`;
+
     saveStaffMember({ 
       name: newName.trim(), 
       email: newEmail.trim(), 
@@ -132,10 +141,53 @@ export default function HRConsultantHub() {
       department: newDept, 
       phone: newPhone.trim(), 
       status: 'Active', 
-      joiningDate: new Date().toLocaleDateString() 
+      joiningDate: new Date().toLocaleDateString(),
+      hrApprovalStatus: 'Verified',
+      hrIssuedId: generatedId
     })
     setNewName(''); setNewEmail(''); setNewPhone('')
-    alert(`Staff ${newName} registered successfully!`)
+    alert(`Staff ${newName} registered successfully with HR ID: ${generatedId}!`)
+  }
+
+  const handleApproveSubordinate = (staffId: string) => {
+    const registryStr = localStorage.getItem('ilas_staff_registry');
+    let registry: StaffUser[] = registryStr ? JSON.parse(registryStr) : [];
+    
+    registry = registry.map(st => {
+      if (st.id === staffId) {
+        return { 
+          ...st, 
+          hrApprovalStatus: 'Verified',
+          hrIssuedId: `STAFF-${st.department.substring(0,2).toUpperCase()}-${Math.floor(Math.random() * 9000) + 1000}`,
+          temporaryAccessExpiry: undefined
+        } as StaffUser;
+      }
+      return st;
+    });
+    
+    localStorage.setItem('ilas_staff_registry', JSON.stringify(registry));
+    window.dispatchEvent(new CustomEvent('ilas-staff-changed'));
+    alert('Subordinate approved and issued official HR ID.');
+  }
+
+  const handleRejectSubordinate = (staffId: string) => {
+    const registryStr = localStorage.getItem('ilas_staff_registry');
+    let registry: StaffUser[] = registryStr ? JSON.parse(registryStr) : [];
+    
+    registry = registry.map(st => {
+      if (st.id === staffId) {
+        return { 
+          ...st, 
+          hrApprovalStatus: 'Rejected',
+          status: 'Terminated'
+        } as StaffUser;
+      }
+      return st;
+    });
+    
+    localStorage.setItem('ilas_staff_registry', JSON.stringify(registry));
+    window.dispatchEvent(new CustomEvent('ilas-staff-changed'));
+    alert('Subordinate access rejected.');
   }
 
   const handleCheckIn = (staff: StaffUser) => {
@@ -320,18 +372,49 @@ export default function HRConsultantHub() {
             </div>
           </form>
 
-          <div className="space-y-2">
-            {staffList.map(st => (
-              <div key={st.id} className="p-3 bg-slate-50 border rounded-2xl flex justify-between items-center text-xs">
-                <div>
-                  <div className="font-black text-slate-900">{st.name} <span className="text-[10px] text-slate-400 font-mono">({st.id})</span></div>
-                  <div className="text-slate-500">{st.email} • <span className="font-bold text-indigo-600">{st.department}</span></div>
-                </div>
-                <button onClick={() => handleCheckIn(st)} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl cursor-pointer">
-                  Log Attendance 🕒
-                </button>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider mb-2">Pending Temporary Subordinates</h4>
+              <div className="space-y-2">
+                {staffList.filter(st => st.hrApprovalStatus === 'Pending HR Approval').length === 0 && (
+                  <p className="text-xs text-slate-500 italic p-3 bg-slate-50 rounded-xl border border-dashed">No pending approvals.</p>
+                )}
+                {staffList.filter(st => st.hrApprovalStatus === 'Pending HR Approval').map(st => (
+                  <div key={st.id} className="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex justify-between items-center text-xs">
+                    <div>
+                      <div className="font-black text-amber-900">{st.name} <span className="text-[10px] text-amber-700 font-mono">(Temp ID: {st.id})</span></div>
+                      <div className="text-amber-800">{st.email} • <span className="font-bold">{st.department}</span></div>
+                      <div className="text-[10px] text-amber-600 mt-1">Temp Access Expires: {st.temporaryAccessExpiry}</div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleApproveSubordinate(st.id)} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl cursor-pointer">
+                        Verify & Issue ID
+                      </button>
+                      <button onClick={() => handleRejectSubordinate(st.id)} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl cursor-pointer">
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            <div>
+              <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider mb-2">Verified Corporate Staff</h4>
+              <div className="space-y-2">
+                {staffList.filter(st => st.hrApprovalStatus !== 'Pending HR Approval' && st.status !== 'Terminated').map(st => (
+                  <div key={st.id} className="p-3 bg-slate-50 border rounded-2xl flex justify-between items-center text-xs">
+                    <div>
+                      <div className="font-black text-slate-900">{st.name} <span className="text-[10px] text-slate-400 font-mono">({st.hrIssuedId || st.id})</span></div>
+                      <div className="text-slate-500">{st.email} • <span className="font-bold text-indigo-600">{st.department}</span></div>
+                    </div>
+                    <button onClick={() => handleCheckIn(st)} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl cursor-pointer">
+                      Log Attendance 🕒
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}

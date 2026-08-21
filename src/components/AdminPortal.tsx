@@ -23,6 +23,7 @@ interface VisitorStatType {
 export default function AdminPortal() {
   const [role, setRole] = useState<string>('Super Admin');
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
   const [showFranchiseModal, setShowFranchiseModal] = useState(false);
   const [franchiseName, setFranchiseName] = useState('');
   const [franchiseEmail, setFranchiseEmail] = useState('');
@@ -144,10 +145,10 @@ export default function AdminPortal() {
     : inquiries.filter(item => item.category === activeCategoryFilter);
 
   return (
-    <div className="bg-slate-50 min-h-screen text-slate-900 font-sans pb-20">
+    <div className={`min-h-screen font-sans pb-20 transition-colors duration-300 ${darkMode ? 'bg-slate-950 text-slate-200' : 'bg-slate-50 text-slate-900'}`}>
       
       {/* 1. TOP STATUS BAR (Security & Branding) */}
-      <div className="bg-white border-b border-slate-200 px-6 py-3 flex flex-wrap justify-between items-center sticky top-0 z-50 shadow-xs">
+      <div className={`${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} border-b px-6 py-3 flex flex-wrap justify-between items-center sticky top-0 z-50 shadow-xs transition-colors duration-300`}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-sm">ILA</div>
           <div>
@@ -171,7 +172,11 @@ export default function AdminPortal() {
             </button>
           )}
 
-          <button onClick={toggleFullScreenWorkspace} className="p-2 hover:bg-slate-100 rounded-xl border border-slate-200 cursor-pointer" title="Full View">
+          <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-xl border cursor-pointer ${darkMode ? 'hover:bg-slate-800 border-slate-700 text-yellow-400' : 'hover:bg-slate-100 border-slate-200 text-slate-600'}`} title="Toggle Dark Mode">
+            {darkMode ? '☀️' : '🌙'}
+          </button>
+
+          <button onClick={toggleFullScreenWorkspace} className={`p-2 rounded-xl border cursor-pointer ${darkMode ? 'hover:bg-slate-800 border-slate-700' : 'hover:bg-slate-100 border-slate-200'}`} title="Full View">
             {isFullScreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
 

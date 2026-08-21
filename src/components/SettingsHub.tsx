@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Lock, UserPlus, Pin, Plus, Trash2, Calendar } from 'lucide-react';
+import { Lock, UserPlus, Pin, Plus, Trash2, Calendar, Users } from 'lucide-react';
 import { StaffUser } from './PortalLogin';
 
 interface StickyNote {
@@ -86,29 +86,68 @@ export default function SettingsHub() {
     setNewPassword('');
   };
 
+  const [selectedStaff, setSelectedStaff] = useState<StaffUser | null>(null);
+
   const handleCreateStaff = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newStaffEmail || !newStaffName || !newStaffPassword) {
+    if (!newStaffEmail || !newStaffName) {
       setStaffFeedback('All fields are required.');
       return;
     }
 
     const nextIdNum = registry.length + 1;
+    
+    // Set 48h temporary expiry
+    const expiryDate = new Date();
+    expiryDate.setHours(expiryDate.getHours() + 48);
+
     const newStaff: StaffUser = {
-      id: `STAFF-${String(nextIdNum).padStart(3, '0')}`,
+      id: `TEMP-${String(nextIdNum).padStart(3, '0')}`,
       email: newStaffEmail.trim(),
       name: newStaffName.trim(),
-      department: newStaffDept
+      department: newStaffDept,
+      hrApprovalStatus: 'Pending HR Approval',
+      temporaryAccessExpiry: expiryDate.toLocaleString()
     };
 
     const updated = [...registry, newStaff];
     setRegistry(updated);
     localStorage.setItem('ilas_staff_registry', JSON.stringify(updated));
-    setStaffFeedback(`Assigned ID ${newStaff.id} successfully to ${newStaff.name}!`);
+    window.dispatchEvent(new CustomEvent('ilas-staff-changed'));
+    setStaffFeedback(`Subordinate ${newStaff.name} created. Pending final HR Verification. Temporary ID: ${newStaff.id}`);
     setNewStaffEmail('');
     setNewStaffName('');
     setNewStaffPassword('');
   };
+
+  const handleEditStaff = (staff: StaffUser) => {
+    setSelectedStaff(staff);
+  };
+
+  const handleUpdateSelectedStaff = (updatedStaff: StaffUser) => {
+    const updatedRegistry = registry.map(s => s.id === updatedStaff.id ? updatedStaff : s);
+    setRegistry(updatedRegistry);
+    localStorage.setItem('ilas_staff_registry', JSON.stringify(updatedRegistry));
+    window.dispatchEvent(new CustomEvent('ilas-staff-changed'));
+    setSelectedStaff(null);
+  };
+
+  const handleDeleteStaff = (staffId: string) => {
+    const updatedRegistry = registry.filter(s => s.id !== staffId);
+    setRegistry(updatedRegistry);
+    localStorage.setItem('ilas_staff_registry', JSON.stringify(updatedRegistry));
+    window.dispatchEvent(new CustomEvent('ilas-staff-changed'));
+    if (selectedStaff?.id === staffId) setSelectedStaff(null);
+  };
+
+  useEffect(() => {
+    const handleStaffChanged = () => {
+      const rStr = localStorage.getItem('ilas_staff_registry');
+      if (rStr) setRegistry(JSON.parse(rStr));
+    };
+    window.addEventListener('ilas-staff-changed', handleStaffChanged);
+    return () => window.removeEventListener('ilas-staff-changed', handleStaffChanged);
+  }, []);
 
   const handleAddNote = () => {
     if (!noteInput.trim()) return;
@@ -273,13 +312,89 @@ export default function SettingsHub() {
             </div>
             <button 
               type="submit"
-              className="w-full py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-indigo-700 transition-all shadow-md"
+              className="w-full py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-indigo-700 transition-all shadow-md cursor-pointer"
             >
-              Generate Corporate ID & Access
+              Create Subordinate (Requires HR Approval)
             </button>
           </form>
         </div>
       </div>
+
+      {/* Live Staff & Subordinate Directory */}
+      <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
+        <h2 className="text-xl font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
+          <Users className="w-5 h-5 text-brand-600" />
+          Live Staff & Subordinate Directory
+        </h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-100 font-black text-slate-600">
+              <tr>
+                <th className="p-3">ID / Temp ID</th>
+                <th className="p-3">Name</th>
+                <th className="p-3">Department</th>
+                <th className="p-3">HR Status</th>
+                <th className="p-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {registry.map(staff => (
+                <tr key={staff.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="p-3 font-mono text-slate-500">{staff.hrIssuedId || staff.id}</td>
+                  <td className="p-3 font-bold text-slate-900">{staff.name}</td>
+                  <td className="p-3 font-semibold text-indigo-600">{staff.department}</td>
+                  <td className="p-3">
+                    <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                      staff.hrApprovalStatus === 'Verified' ? 'bg-emerald-100 text-emerald-700' :
+                      staff.hrApprovalStatus === 'Rejected' ? 'bg-rose-100 text-rose-700' :
+                      'bg-amber-100 text-amber-700'
+                    }`}>
+                      {staff.hrApprovalStatus || 'Verified'}
+                    </span>
+                  </td>
+                  <td className="p-3 text-right">
+                    <button onClick={() => handleEditStaff(staff)} className="text-indigo-600 hover:text-indigo-800 font-bold mr-3 cursor-pointer">Edit</button>
+                    <button onClick={() => handleDeleteStaff(staff.id)} className="text-rose-600 hover:text-rose-800 font-bold cursor-pointer">Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {selectedStaff && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h3 className="text-lg font-black mb-4">Edit Staff / Subordinate</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold mb-1">Name</label>
+                <input type="text" value={selectedStaff.name} onChange={(e) => setSelectedStaff({...selectedStaff, name: e.target.value})} className="w-full border p-2 rounded-xl text-xs" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1">Email</label>
+                <input type="email" value={selectedStaff.email} onChange={(e) => setSelectedStaff({...selectedStaff, email: e.target.value})} className="w-full border p-2 rounded-xl text-xs" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1">Department</label>
+                <select value={selectedStaff.department} onChange={(e: any) => setSelectedStaff({...selectedStaff, department: e.target.value})} className="w-full border p-2 rounded-xl text-xs font-bold">
+                  <option value="Super Admin">Super Admin / CEO</option>
+                  <option value="General Manager">General Manager</option>
+                  <option value="Finance Officer">Finance Officer</option>
+                  <option value="HR Manager">HR Manager</option>
+                  <option value="Marketing Exec">Marketing Exec</option>
+                  <option value="Academic Counselor">Academic Counselor</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 mt-6">
+                <button onClick={() => setSelectedStaff(null)} className="px-4 py-2 bg-slate-100 font-bold rounded-xl text-xs cursor-pointer">Cancel</button>
+                <button onClick={() => handleUpdateSelectedStaff(selectedStaff)} className="px-4 py-2 bg-brand-600 text-white font-bold rounded-xl text-xs cursor-pointer">Save Changes</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sticky Notes Memo Board & Meeting Schedule Manager */}
       <div className="grid lg:grid-cols-3 gap-8">

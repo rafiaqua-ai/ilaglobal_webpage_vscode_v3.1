@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Lock, UserPlus, Pin, Plus, Trash2, Calendar, ShieldCheck, Cpu, Terminal, Eye } from 'lucide-react';
+import { Lock, UserPlus, Pin, Plus, Trash2, Calendar, ShieldCheck, Cpu, Terminal, Eye, Activity, Users } from 'lucide-react';
 import { StaffUser } from './PortalLogin';
 
 interface StickyNote {
@@ -425,6 +425,24 @@ export default function SettingsHub() {
       {activeTab === 'monitor' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-6">
+            
+            {/* Live Activity / Live Stream Widget */}
+            <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 flex flex-col gap-2 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-10">
+                <Activity className="w-24 h-24 text-emerald-500 animate-pulse" />
+              </div>
+              <div className="flex items-center gap-2 relative z-10">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                <h3 className="font-black text-emerald-400 text-xs uppercase tracking-widest">Live Activity Stream</h3>
+              </div>
+              <div className="space-y-1 mt-2 text-[10px] font-mono text-slate-300 relative z-10">
+                <p>➔ [11:15:23] HR: Approved candidate Ajmal.</p>
+                <p>➔ [11:14:10] Finance: Synced payroll data.</p>
+                <p>➔ [11:12:05] Marketing: New campaign 'EU Study' launched.</p>
+                <p>➔ [11:10:44] System: 15 active users online.</p>
+              </div>
+            </div>
+
             <div className="flex justify-between items-center border-b pb-4">
               <div>
                 <h3 className="font-black text-slate-900 flex items-center gap-2 text-sm">

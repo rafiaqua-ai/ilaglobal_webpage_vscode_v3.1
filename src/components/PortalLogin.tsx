@@ -14,7 +14,10 @@ export interface StaffUser {
   id: string
   email: string
   name: string
-  department: 'Super Admin' | 'General Manager' | 'Finance Officer' | 'HR Manager' | 'Marketing Exec' | 'Academic Counselor'
+  department: 'Super Admin' | 'General Manager' | 'Finance Officer' | 'HR Manager' | 'Marketing Exec' | 'Academic Counselor' | 'Education' | 'Visa'
+  hrApprovalStatus?: 'Pending HR Approval' | 'Verified' | 'Rejected'
+  hrIssuedId?: string
+  temporaryAccessExpiry?: string
 }
 
 export default function PortalLogin() {

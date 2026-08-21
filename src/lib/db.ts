@@ -48,6 +48,9 @@ export interface StaffUser {
   joiningDate?: string;
   status?: 'Active' | 'On Leave' | 'Terminated';
   resumeUrl?: string;
+  hrApprovalStatus?: 'Pending HR Approval' | 'Verified' | 'Rejected';
+  hrIssuedId?: string;
+  temporaryAccessExpiry?: string;
 }
 
 export interface AttendanceLog {
