@@ -23,6 +23,7 @@ html {
 body {
   font-family: var(--font-sans);
   @apply antialiased text-slate-800 bg-white;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .section-padding {

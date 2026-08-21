@@ -1,12 +1,5 @@
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
-import EducationSection from './components/EducationSection'
-import JobsSection from './components/JobsSection'
-import VisaSection from './components/VisaSection'
-import WorkWhileYouStudySection from './components/WorkWhileYouStudySection'
-import RewardsSection from './components/RewardsSection'
-import EligibilityChecker from './components/EligibilityChecker'
-import AboutContact from './components/AboutContact'
 import Footer from './components/Footer'
 import PortalLogin from './components/PortalLogin'
 import LanguageTrainer from './components/LanguageTrainer'
@@ -14,6 +7,7 @@ import LiveConsultant from './components/LiveConsultant'
 import UnifiedIntakeForms from './components/UnifiedIntakeForms'
 
 import { useState, useEffect } from 'react'
+import HomePage from './components/HomePage'
 import GermanLanguagePage from './components/GermanLanguagePage'
 import { logVisitorActivity } from './lib/db'
 import StudentDashboard from './components/StudentDashboard'
@@ -234,18 +228,7 @@ function App() {
         ) : currentPage === 'applications' ? (
           <ApplicationPoolPage />
         ) : (
-          <>
-            <Hero />
-            {/* Added Choose Your Path / Path selection context if needed, but Hero usually covers it. 
-                The user specifically mentioned restoring course explanation right below Hero. */}
-            <EducationSection />
-            <EligibilityChecker />
-            <JobsSection />
-            <VisaSection />
-            <WorkWhileYouStudySection />
-            <RewardsSection />
-            <AboutContact />
-          </>
+          <HomePage />
         )}
       </main>
       {!isAdminPage && <Footer />}
