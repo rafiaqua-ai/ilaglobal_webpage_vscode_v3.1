@@ -25,25 +25,36 @@ interface Candidate {
   email: string
   phone: string
   position: string
-  stage: 'Application & Interview' | 'Document Verification' | 'ID Generated'
+  notes?: string
+  characterAnalysis?: string
+  expectedSalary?: string
+  offeredSalary?: string
+  documentsUploaded?: boolean
+  departmentAssigned?: string
+  stage: 'Hiring & Interview' | 'Pending Department Approval' | 'Onboarding & Payroll' | 'Training & ID Generation' | 'Completed'
   status: 'Pending' | 'Approved' | 'Rejected'
 }
 
 export default function HRConsultantHub() {
-  // Updated order: Hiring/Onboarding & Payroll brought to the front
-  const [activePillar, setActivePillar] = useState<'onboarding' | 'payroll' | 'ld' | 'hrms' | 'reports' | 'tasks' | 'visa' | 'performance' | 'welfare' | 'discipline' | 'ai_tech'>('onboarding')
+  const [activePillar, setActivePillar] = useState<'hiring' | 'payroll' | 'ld' | 'hrms' | 'approvals' | 'reports' | 'tasks' | 'visa' | 'performance' | 'welfare' | 'discipline' | 'ai_tech'>('hiring')
   
   const [staffList, setStaffList] = useState<StaffUser[]>([])
   const [attendanceLogs, setAttendanceLogs] = useState<AttendanceLog[]>([])
 
   // Hiring & Onboarding Candidates State
   const [candidates, setCandidates] = useState<Candidate[]>([
-    { id: 'CAND-101', name: 'Ajmal', email: 'ajmal@ilas.global', phone: '+91 9876543210', position: 'Academic Counselor', stage: 'Document Verification', status: 'Pending' }
+    { id: 'CAND-101', name: 'Ajmal', email: 'ajmal@ilas.global', phone: '+91 9876543210', position: 'Academic Counselor', departmentAssigned: 'Education', stage: 'Onboarding & Payroll', status: 'Approved' }
   ])
   const [candName, setCandName] = useState('')
   const [candEmail, setCandEmail] = useState('')
   const [candPhone, setCandPhone] = useState('')
   const [candPosition, setCandPosition] = useState('Academic Counselor')
+  const [candNotes, setCandNotes] = useState('')
+  const [candCharacter, setCandCharacter] = useState('')
+  const [candExpectedSalary, setCandExpectedSalary] = useState('')
+  const [candOfferedSalary, setCandOfferedSalary] = useState('')
+  const [candDocsUploaded, setCandDocsUploaded] = useState(false)
+  const [candDept, setCandDept] = useState('HR Manager')
 
   // New Staff Form State (HRMS)
   const [newName, setNewName] = useState('')
@@ -109,39 +120,56 @@ export default function HRConsultantHub() {
       email: candEmail.trim(),
       phone: candPhone.trim(),
       position: candPosition,
-      stage: 'Application & Interview',
+      notes: candNotes,
+      characterAnalysis: candCharacter,
+      expectedSalary: candExpectedSalary,
+      offeredSalary: candOfferedSalary,
+      documentsUploaded: candDocsUploaded,
+      departmentAssigned: candDept,
+      stage: 'Hiring & Interview',
       status: 'Pending'
     }
     setCandidates([newCand, ...candidates])
     setCandName('')
     setCandEmail('')
     setCandPhone('')
-    alert(`Candidate ${newCand.name} enrolled into Application & Interview stage!`)
+    setCandNotes('')
+    setCandCharacter('')
+    setCandExpectedSalary('')
+    setCandOfferedSalary('')
+    setCandDocsUploaded(false)
+    alert(`Candidate ${newCand.name} profile created in Hiring & Interview stage!`)
   }
 
-  const handleAdvanceStage = (id: string) => {
+  const handleAdvanceStage = (id: string, action: 'route_dept' | 'approve_dept' | 'to_training' | 'generate_id') => {
     setCandidates(prev => prev.map(c => {
       if (c.id === id) {
-        if (c.stage === 'Application & Interview') {
-          return { ...c, stage: 'Document Verification' }
-        } else if (c.stage === 'Document Verification') {
-          // Automatically register staff member upon completing verification & generating ID
+        if (action === 'route_dept' && c.stage === 'Hiring & Interview') {
+          alert(`Sent to ${c.departmentAssigned} Manager for Approval.`)
+          return { ...c, stage: 'Pending Department Approval' }
+        } else if (action === 'approve_dept' && c.stage === 'Pending Department Approval') {
+          alert(`Department Approved. Moved to Onboarding & Payroll.`)
+          return { ...c, stage: 'Onboarding & Payroll', status: 'Approved' }
+        } else if (action === 'to_training' && c.stage === 'Onboarding & Payroll') {
+          alert(`Onboarding Complete. Passed to Training stage.`)
+          return { ...c, stage: 'Training & ID Generation' }
+        } else if (action === 'generate_id' && c.stage === 'Training & ID Generation') {
           const nextIdNum = Math.floor(Math.random() * 9000) + 1000;
           const generatedId = `STAFF-${c.position.substring(0,2).toUpperCase()}-${nextIdNum}`;
           
           saveStaffMember({
             name: c.name,
             email: c.email,
-            password: '',
-            department: c.position as any,
+            password: 'temp-password',
+            department: (c.departmentAssigned || 'Academic Counselor') as any,
             phone: c.phone,
             status: 'Active',
             joiningDate: new Date().toLocaleDateString(),
             hrApprovalStatus: 'Verified',
             hrIssuedId: generatedId
           })
-          alert(`Verification passed! Corporate ID (${generatedId}) & Access generated for ${c.name}.`)
-          return { ...c, stage: 'ID Generated', status: 'Approved' }
+          alert(`Staff ID (${generatedId}) generated! Staff member added to directory.`)
+          return { ...c, stage: 'Completed', status: 'Approved' }
         }
       }
       return c
@@ -302,20 +330,21 @@ export default function HRConsultantHub() {
   return (
     <div className="space-y-6">
       
-      {/* Top Pillar Switcher (Re-organized with Onboarding & Payroll at the front) */}
+      {/* Top Pillar Switcher */}
       <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-1 overflow-x-auto no-scrollbar py-2">
         {[
-          { id: 'onboarding', label: '1. Hiring & Onboard', icon: Briefcase },
-          { id: 'payroll', label: '2. Payroll & Finance', icon: DollarSign },
-          { id: 'ld', label: '3. L&D Training', icon: GraduationCap },
-          { id: 'hrms', label: '4. Internal HRM & Staff', icon: Users },
-          { id: 'reports', label: '📊 HR & Audit Reports', icon: FileText },
-          { id: 'tasks', label: '📋 Task Delegation', icon: UserCheck },
-          { id: 'visa', label: '5. Global Mobility', icon: Plane },
-          { id: 'performance', label: '6. Performance KPI', icon: TrendingUp },
-          { id: 'welfare', label: '7. Welfare & Safety', icon: HeartHandshake },
-          { id: 'discipline', label: '8. Discipline & Exit', icon: Shield },
-          { id: 'ai_tech', label: '9. AI & HR Tech', icon: Cpu }
+          { id: 'hiring', label: 'Hiring & Onboard', icon: Briefcase },
+          { id: 'payroll', label: 'Payroll & Finance', icon: DollarSign },
+          { id: 'ld', label: 'L&D Training', icon: GraduationCap },
+          { id: 'hrms', label: 'Internal HRM & Staff', icon: Users },
+          { id: 'approvals', label: 'Staff Approvals', icon: CheckCircle2 },
+          { id: 'reports', label: 'HR & Audit Reports', icon: FileText },
+          { id: 'tasks', label: 'Task Delegation', icon: UserCheck },
+          { id: 'visa', label: 'Global Mobility', icon: Plane },
+          { id: 'performance', label: 'Performance KPI', icon: TrendingUp },
+          { id: 'welfare', label: 'Welfare & Safety', icon: HeartHandshake },
+          { id: 'discipline', label: 'Discipline & Exit', icon: Shield },
+          { id: 'ai_tech', label: 'AI & HR Tech', icon: Cpu }
         ].map((tab) => {
           const Icon = tab.icon
           return (
@@ -332,17 +361,17 @@ export default function HRConsultantHub() {
         })}
       </div>
 
-      {/* 1. HIRING & ONBOARDING (3 STAGES WORKFLOW) */}
-      {activePillar === 'onboarding' && (
+      {/* 1. HIRING & ONBOARDING STAGES */}
+      {activePillar === 'hiring' && (
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
           <div className="flex justify-between items-center border-b pb-4">
             <div>
               <h3 className="font-black text-slate-900 flex items-center gap-2 text-sm">
-                <Briefcase className="w-5 h-5 text-indigo-600" /> Internal Hiring & Onboarding Pipeline
+                <Briefcase className="w-5 h-5 text-indigo-600" /> Hiring & Interview Stage
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">Stage 1: Application & Interview ➔ Stage 2: Document Verification ➔ Stage 3: Corporate ID Generation</p>
+              <p className="text-xs text-slate-500 mt-0.5">Workflow: Hiring & Interview ➔ Dept Approval ➔ Onboarding & Payroll ➔ Training ➔ ID Generation</p>
             </div>
-            <span className="text-[10px] bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full font-bold">Secure Onboarding</span>
+            <span className="text-[10px] bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full font-bold">Candidate Capture</span>
           </div>
 
           <form onSubmit={handleAddCandidate} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border text-xs">
@@ -351,37 +380,88 @@ export default function HRConsultantHub() {
             <input type="text" placeholder="Phone Number" value={candPhone} onChange={(e) => setCandPhone(e.target.value)} className="p-2.5 border rounded-xl bg-white outline-none font-medium" />
             <select value={candPosition} onChange={(e) => setCandPosition(e.target.value)} className="p-2.5 border rounded-xl bg-white outline-none font-bold">
               <option value="Academic Counselor">Academic Counselor</option>
-              <option value="Education">Education</option>
-              <option value="Visa">Visa Department</option>
+              <option value="Instructor">Instructor</option>
+              <option value="Visa Consultant">Visa Consultant</option>
               <option value="Finance Officer">Finance Officer</option>
-              <option value="HR Manager">HR Manager</option>
               <option value="Marketing Exec">Marketing Exec</option>
             </select>
-            <div className="col-span-full flex justify-end">
+
+            <textarea placeholder="Discussion Notes..." value={candNotes} onChange={(e) => setCandNotes(e.target.value)} className="p-2.5 border rounded-xl bg-white outline-none font-medium sm:col-span-2 resize-none h-16"></textarea>
+            <textarea placeholder="Character/Habit Analysis..." value={candCharacter} onChange={(e) => setCandCharacter(e.target.value)} className="p-2.5 border rounded-xl bg-white outline-none font-medium sm:col-span-2 resize-none h-16"></textarea>
+
+            <input type="text" placeholder="Expected Salary" value={candExpectedSalary} onChange={(e) => setCandExpectedSalary(e.target.value)} className="p-2.5 border rounded-xl bg-white outline-none font-medium" />
+            <input type="text" placeholder="Offered Salary" value={candOfferedSalary} onChange={(e) => setCandOfferedSalary(e.target.value)} className="p-2.5 border rounded-xl bg-white outline-none font-medium" />
+            
+            <div className="flex items-center gap-2 p-2.5 bg-white border rounded-xl">
+              <input type="checkbox" checked={candDocsUploaded} onChange={(e) => setCandDocsUploaded(e.target.checked)} id="docs" />
+              <label htmlFor="docs" className="font-bold text-slate-600">Documents Uploaded (Resume/Passport)</label>
+            </div>
+
+            <select value={candDept} onChange={(e) => setCandDept(e.target.value)} className="p-2.5 border rounded-xl bg-white outline-none font-bold" aria-label="Department to Route To">
+              <option value="Education">Route to Education Manager</option>
+              <option value="Visa">Route to Visa Manager</option>
+              <option value="Finance">Route to Finance Manager</option>
+              <option value="HR">Route to HR Manager</option>
+              <option value="Marketing">Route to Marketing Manager</option>
+            </select>
+
+            <div className="col-span-full flex justify-end mt-2">
               <button type="submit" className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl cursor-pointer shadow-xs flex items-center gap-1.5">
-                <Plus className="w-4 h-4" /> Enroll Candidate for Interview
+                <Plus className="w-4 h-4" /> Save Candidate & Initiate Hiring
               </button>
             </div>
           </form>
 
           <div className="space-y-3">
-            <h4 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Active Candidates & Onboarding List ({candidates.length})</h4>
-            <div className="space-y-2">
+            <h4 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Candidate Pipeline ({candidates.length})</h4>
+            <div className="space-y-3">
               {candidates.map(cand => (
-                <div key={cand.id} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row justify-between sm:items-center gap-3 text-xs">
-                  <div>
-                    <div className="font-black text-slate-900 text-sm">{cand.name} <span className="text-[10px] text-slate-400 font-mono">({cand.id})</span></div>
-                    <div className="text-slate-500 mt-0.5">{cand.email} • Position: <span className="font-bold text-indigo-600">{cand.position}</span></div>
-                    <div className="mt-1">Current Stage: <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded font-bold">{cand.stage}</span></div>
+                <div key={cand.id} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row justify-between gap-4 text-xs">
+                  <div className="space-y-2 flex-grow">
+                    <div>
+                      <div className="font-black text-slate-900 text-sm flex items-center gap-2">
+                        {cand.name} <span className="text-[10px] text-slate-400 font-mono">({cand.id})</span>
+                        {cand.documentsUploaded && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[9px]">Docs OK</span>}
+                      </div>
+                      <div className="text-slate-500 mt-0.5">{cand.email} • Dept: <span className="font-bold text-indigo-600">{cand.departmentAssigned}</span></div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 max-w-lg text-[10px]">
+                      {cand.expectedSalary && <div className="bg-white p-1.5 rounded border">Expected: <b>{cand.expectedSalary}</b></div>}
+                      {cand.offeredSalary && <div className="bg-white p-1.5 rounded border">Offered: <b>{cand.offeredSalary}</b></div>}
+                    </div>
+
+                    <div className="mt-2 text-[11px]">Current Status: 
+                      <span className={`ml-2 px-2 py-0.5 rounded font-bold ${cand.stage === 'Pending Department Approval' ? 'bg-amber-100 text-amber-800' : cand.stage === 'Onboarding & Payroll' ? 'bg-blue-100 text-blue-800' : cand.stage === 'Training & ID Generation' ? 'bg-indigo-100 text-indigo-800' : cand.stage === 'Completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-800'}`}>
+                        {cand.stage === 'Pending Department Approval' ? `Pending Approval from ${cand.departmentAssigned} Manager` : cand.stage}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {cand.stage !== 'ID Generated' ? (
-                      <button onClick={() => handleAdvanceStage(cand.id)} className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl cursor-pointer">
-                        {cand.stage === 'Application & Interview' ? 'Verify Documents ➔' : 'Generate Corporate ID 🛡️'}
+                  
+                  <div className="flex flex-col gap-2 shrink-0 justify-center">
+                    {cand.stage === 'Hiring & Interview' && (
+                      <button onClick={() => handleAdvanceStage(cand.id, 'route_dept')} className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-black rounded-xl cursor-pointer">
+                        Route to Dept. Manager ➔
                       </button>
-                    ) : (
-                      <span className="px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-xl font-black text-xs">
-                        ✅ Onboarding Completed
+                    )}
+                    {cand.stage === 'Pending Department Approval' && (
+                      <button onClick={() => handleAdvanceStage(cand.id, 'approve_dept')} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl cursor-pointer">
+                        Approve & Send to Onboarding ✅
+                      </button>
+                    )}
+                    {cand.stage === 'Onboarding & Payroll' && (
+                      <button onClick={() => handleAdvanceStage(cand.id, 'to_training')} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl cursor-pointer">
+                        Onboarding Done ➔ Send to Training
+                      </button>
+                    )}
+                    {cand.stage === 'Training & ID Generation' && (
+                      <button onClick={() => handleAdvanceStage(cand.id, 'generate_id')} className="px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white font-black rounded-xl cursor-pointer">
+                        Generate Staff ID & Credentials 🛡️
+                      </button>
+                    )}
+                    {cand.stage === 'Completed' && (
+                      <span className="px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-xl font-black text-xs text-center border border-emerald-200">
+                        ✅ Added to Directory
                       </span>
                     )}
                   </div>
@@ -440,54 +520,6 @@ export default function HRConsultantHub() {
 
           <div className="space-y-4">
             <div>
-              <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider mb-2">Activation Requests / Pending Approvals</h4>
-              <div className="space-y-2">
-                {staffList.filter(st => st.hrApprovalStatus === 'Pending HR Approval').length === 0 && (
-                  <p className="text-xs text-slate-500 italic p-3 bg-slate-50 rounded-xl border border-dashed">No pending approvals in queue.</p>
-                )}
-                {staffList.filter(st => st.hrApprovalStatus === 'Pending HR Approval').map(st => (
-                  <div key={st.id} className="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex justify-between items-center text-xs">
-                    <div>
-                      <div className="font-black text-amber-900">{st.name} <span className="text-[10px] text-amber-700 font-mono">(Temp ID: {st.id})</span></div>
-                      <div className="text-amber-800">{st.email} • <span className="font-bold">{st.department}</span></div>
-                      <div className="text-[10px] text-amber-600 mt-1">Temp Access Expires: {st.temporaryAccessExpiry}</div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => handleApproveSubordinate(st.id)} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl cursor-pointer">
-                        Approve & Activate
-                      </button>
-                      <button onClick={() => handleRejectSubordinate(st.id)} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl cursor-pointer">
-                        Reject
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {staffList.some(st => (st.hrApprovalStatus as any) === 'Blocked (Timeout)') && (
-              <div>
-                <h4 className="font-bold text-rose-700 text-xs uppercase tracking-wider mb-2">Blocked / Suspended (Timeout)</h4>
-                <div className="space-y-2">
-                  {staffList.filter(st => (st.hrApprovalStatus as any) === 'Blocked (Timeout)').map(st => (
-                    <div key={st.id} className="p-3 bg-rose-50 border border-rose-200 rounded-2xl flex justify-between items-center text-xs">
-                      <div>
-                        <div className="font-black text-rose-900">{st.name} <span className="text-[10px] text-rose-700 font-mono">({st.id})</span></div>
-                        <div className="text-rose-800">{st.email} • <span className="font-bold">{st.department}</span></div>
-                        <div className="text-[10px] text-rose-600 mt-1 font-bold">Auto-Blocked: 48-Hour Timer Expired</div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => handleApproveSubordinate(st.id)} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl cursor-pointer">
-                          Re-activate / Approve
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div>
               <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider mb-2">Verified Corporate Staff</h4>
               <div className="space-y-2">
                 {staffList.filter(st => st.hrApprovalStatus !== 'Pending HR Approval' && st.status !== 'Terminated').map(st => (
@@ -507,7 +539,66 @@ export default function HRConsultantHub() {
         </div>
       )}
 
-      {/* 5. HR & AUDIT REPORTS */}
+      {/* 5. HR APPROVALS (NEW DEDICATED TAB) */}
+      {activePillar === 'approvals' && (
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+          <div className="flex justify-between items-center border-b pb-4">
+            <h3 className="font-black text-slate-900 flex items-center gap-2 text-sm">
+              <CheckCircle2 className="w-5 h-5 text-indigo-600" /> Pending Staff Approvals & Activation Requests
+            </h3>
+          </div>
+
+          <div>
+            <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider mb-2">Activation Requests / Pending Approvals</h4>
+            <div className="space-y-2">
+              {staffList.filter(st => st.hrApprovalStatus === 'Pending HR Approval').length === 0 && (
+                <p className="text-xs text-slate-500 italic p-3 bg-slate-50 rounded-xl border border-dashed">No pending approvals in queue.</p>
+              )}
+              {staffList.filter(st => st.hrApprovalStatus === 'Pending HR Approval').map(st => (
+                <div key={st.id} className="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex justify-between items-center text-xs">
+                  <div>
+                    <div className="font-black text-amber-900">{st.name} <span className="text-[10px] text-amber-700 font-mono">(Temp ID: {st.id})</span></div>
+                    <div className="text-amber-800">{st.email} • <span className="font-bold">{st.department}</span></div>
+                    <div className="text-[10px] text-amber-600 mt-1">Temp Access Expires: {st.temporaryAccessExpiry}</div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleApproveSubordinate(st.id)} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl cursor-pointer">
+                      Approve & Activate
+                    </button>
+                    <button onClick={() => handleRejectSubordinate(st.id)} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl cursor-pointer">
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {staffList.some(st => (st.hrApprovalStatus as any) === 'Blocked (Timeout)') && (
+            <div>
+              <h4 className="font-bold text-rose-700 text-xs uppercase tracking-wider mb-2">Blocked / Suspended (Timeout)</h4>
+              <div className="space-y-2">
+                {staffList.filter(st => (st.hrApprovalStatus as any) === 'Blocked (Timeout)').map(st => (
+                  <div key={st.id} className="p-3 bg-rose-50 border border-rose-200 rounded-2xl flex justify-between items-center text-xs">
+                    <div>
+                      <div className="font-black text-rose-900">{st.name} <span className="text-[10px] text-rose-700 font-mono">({st.id})</span></div>
+                      <div className="text-rose-800">{st.email} • <span className="font-bold">{st.department}</span></div>
+                      <div className="text-[10px] text-rose-600 mt-1 font-bold">Auto-Blocked: 48-Hour Timer Expired</div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleApproveSubordinate(st.id)} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl cursor-pointer">
+                        Re-activate / Approve
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 6. HR & AUDIT REPORTS */}
       {activePillar === 'reports' && (
         <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-6">
           <div className="flex justify-between items-center border-b pb-4">
