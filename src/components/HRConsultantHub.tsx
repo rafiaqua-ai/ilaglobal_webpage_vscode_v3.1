@@ -413,9 +413,9 @@ export default function HRConsultantHub() {
           </form>
 
           <div className="space-y-3">
-            <h4 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Candidate Pipeline ({candidates.length})</h4>
+            <h4 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Candidate Pipeline ({candidates.filter(c => ['Hiring & Interview', 'Pending Department Approval'].includes(c.stage)).length})</h4>
             <div className="space-y-3">
-              {candidates.map(cand => (
+              {candidates.filter(c => ['Hiring & Interview', 'Pending Department Approval'].includes(c.stage)).map(cand => (
                 <div key={cand.id} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row justify-between gap-4 text-xs">
                   <div className="space-y-2 flex-grow">
                     <div>
@@ -432,7 +432,7 @@ export default function HRConsultantHub() {
                     </div>
 
                     <div className="mt-2 text-[11px]">Current Status: 
-                      <span className={`ml-2 px-2 py-0.5 rounded font-bold ${cand.stage === 'Pending Department Approval' ? 'bg-amber-100 text-amber-800' : cand.stage === 'Onboarding & Payroll' ? 'bg-blue-100 text-blue-800' : cand.stage === 'Training & ID Generation' ? 'bg-indigo-100 text-indigo-800' : cand.stage === 'Completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-800'}`}>
+                      <span className={`ml-2 px-2 py-0.5 rounded font-bold ${cand.stage === 'Pending Department Approval' ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-800'}`}>
                         {cand.stage === 'Pending Department Approval' ? `Pending Approval from ${cand.departmentAssigned} Manager` : cand.stage}
                       </span>
                     </div>
@@ -449,45 +449,99 @@ export default function HRConsultantHub() {
                         Approve & Send to Onboarding ✅
                       </button>
                     )}
-                    {cand.stage === 'Onboarding & Payroll' && (
-                      <button onClick={() => handleAdvanceStage(cand.id, 'to_training')} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl cursor-pointer">
-                        Onboarding Done ➔ Send to Training
-                      </button>
-                    )}
-                    {cand.stage === 'Training & ID Generation' && (
-                      <button onClick={() => handleAdvanceStage(cand.id, 'generate_id')} className="px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white font-black rounded-xl cursor-pointer">
-                        Generate Staff ID & Credentials 🛡️
-                      </button>
-                    )}
-                    {cand.stage === 'Completed' && (
-                      <span className="px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-xl font-black text-xs text-center border border-emerald-200">
-                        ✅ Added to Directory
-                      </span>
-                    )}
                   </div>
                 </div>
               ))}
+              {candidates.filter(c => ['Hiring & Interview', 'Pending Department Approval'].includes(c.stage)).length === 0 && (
+                <div className="p-4 text-center text-slate-500 text-xs italic bg-slate-50 border border-dashed rounded-xl">No active candidates in the hiring phase.</div>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* 2. PAYROLL & FINANCE SYNC */}
+      {/* 2. PAYROLL & FINANCE SYNC (ONBOARDING) */}
       {activePillar === 'payroll' && (
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-          <h3 className="font-black text-slate-900 text-sm">Payroll & Finance Sync</h3>
-          <p className="text-xs text-slate-500">Calculate internal staff payroll and push salary expenses directly into the Enterprise Finance Ledger.</p>
-          <button onClick={handleRunPayrollSync} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-black text-xs cursor-pointer shadow-xs">
-            Process Payroll & Sync to Finance 💳
-          </button>
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+          <div className="flex justify-between items-center border-b pb-4">
+            <div>
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2"><DollarSign className="w-5 h-5 text-indigo-600" /> Onboarding & Payroll Stage</h3>
+              <p className="text-xs text-slate-500 mt-1">Process finalized salary and statutory details for approved candidates.</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h4 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Candidates Pending Onboarding</h4>
+            <div className="space-y-3">
+              {candidates.filter(c => c.stage === 'Onboarding & Payroll').map(cand => (
+                <div key={cand.id} className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex flex-col sm:flex-row justify-between gap-4 text-xs">
+                  <div className="space-y-2 flex-grow">
+                    <div>
+                      <div className="font-black text-slate-900 text-sm flex items-center gap-2">{cand.name}</div>
+                      <div className="text-slate-500 mt-0.5">Final Dept: <span className="font-bold text-indigo-600">{cand.departmentAssigned}</span></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 max-w-lg text-[10px]">
+                      <div className="bg-white p-1.5 rounded border">Agreed Salary: <b>{cand.offeredSalary || 'N/A'}</b></div>
+                      <div className="bg-white p-1.5 rounded border">Statutory (PF/Tax): <b>Pending Setup</b></div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 shrink-0 justify-center">
+                    <button onClick={() => handleAdvanceStage(cand.id, 'to_training')} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl cursor-pointer">
+                      Complete Onboarding ➔ Pass to Training
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {candidates.filter(c => c.stage === 'Onboarding & Payroll').length === 0 && (
+                <div className="p-4 text-center text-slate-500 text-xs italic bg-slate-50 border border-dashed rounded-xl">No candidates currently in onboarding.</div>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-6 border-t mt-6">
+            <h3 className="font-black text-slate-900 text-sm mb-2">Mass Payroll Sync</h3>
+            <p className="text-xs text-slate-500 mb-4">Calculate internal staff payroll and push salary expenses directly into the Enterprise Finance Ledger.</p>
+            <button onClick={handleRunPayrollSync} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-black text-xs cursor-pointer shadow-xs">
+              Process Payroll & Sync to Finance 💳
+            </button>
+          </div>
         </div>
       )}
 
-      {/* 3. L&D TRAINING SYNC */}
+      {/* 3. L&D TRAINING SYNC (TRAINING & ID) */}
       {activePillar === 'ld' && (
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-          <h3 className="font-black text-slate-900 text-sm">L&D Training & Staff Upskilling</h3>
-          <p className="text-xs text-slate-500">Manage internal training modules, German language proficiency assessments, and employee certifications before full enrollment.</p>
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+          <div className="flex justify-between items-center border-b pb-4">
+            <div>
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2"><GraduationCap className="w-5 h-5 text-indigo-600" /> Training & Staff ID Generation</h3>
+              <p className="text-xs text-slate-500 mt-1">Manage internal training and officially generate corporate IDs for new hires.</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h4 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Candidates In Training</h4>
+            <div className="space-y-3">
+              {candidates.filter(c => c.stage === 'Training & ID Generation').map(cand => (
+                <div key={cand.id} className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col sm:flex-row justify-between gap-4 text-xs">
+                  <div className="space-y-2 flex-grow">
+                    <div>
+                      <div className="font-black text-slate-900 text-sm flex items-center gap-2">{cand.name}</div>
+                      <div className="text-slate-500 mt-0.5">{cand.email} • Role: <span className="font-bold">{cand.position}</span></div>
+                    </div>
+                    <div className="text-[11px] text-indigo-700 font-bold">Status: Pending Corporate ID Generation & Directory Sync</div>
+                  </div>
+                  <div className="flex flex-col gap-2 shrink-0 justify-center">
+                    <button onClick={() => handleAdvanceStage(cand.id, 'generate_id')} className="px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white font-black rounded-xl cursor-pointer">
+                      Generate Staff ID & Credentials 🛡️
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {candidates.filter(c => c.stage === 'Training & ID Generation').length === 0 && (
+                <div className="p-4 text-center text-slate-500 text-xs italic bg-slate-50 border border-dashed rounded-xl">No candidates currently in training.</div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
