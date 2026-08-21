@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Lock, UserPlus, Pin, Plus, Trash2, Calendar, Users } from 'lucide-react';
 import { StaffUser } from './PortalLogin';
+import { supabase, supabaseAdmin } from '../supabaseClient';
 
 interface StickyNote {
   id: string;
@@ -29,6 +30,7 @@ export default function SettingsHub() {
   const [newStaffName, setNewStaffName] = useState('');
   const [newStaffPassword, setNewStaffPassword] = useState('');
   const [newStaffDept, setNewStaffDept] = useState<'Super Admin' | 'General Manager' | 'Finance Officer' | 'HR Manager' | 'Marketing Exec' | 'Academic Counselor'>('Academic Counselor');
+  const [newStaffHRId, setNewStaffHRId] = useState('');
   const [staffFeedback, setStaffFeedback] = useState<string | null>(null);
 
   // Sticky Notes & Meeting state
@@ -61,12 +63,20 @@ export default function SettingsHub() {
     ]);
   }, []);
 
-  const handleUpdatePassword = (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPassword) {
       setPwdFeedback('Please specify a new password.');
       return;
     }
+    
+    // Update password in Supabase Auth
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      setPwdFeedback('Supabase Auth Error: ' + error.message);
+      return;
+    }
+
     // Perform update in mock session and staff registry
     const rStr = localStorage.getItem('ilas_staff_registry');
     let staffList: StaffUser[] = rStr ? JSON.parse(rStr) : [];
@@ -88,11 +98,60 @@ export default function SettingsHub() {
 
   const [selectedStaff, setSelectedStaff] = useState<StaffUser | null>(null);
 
-  const handleCreateStaff = (e: React.FormEvent) => {
+  const handleCreateStaff = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newStaffEmail || !newStaffName) {
-      setStaffFeedback('All fields are required.');
+    if (!newStaffEmail || !newStaffName || !newStaffPassword || !newStaffHRId) {
+      setStaffFeedback('All fields (Name, Email, Password, HR-Issued ID) are required. Subordinates must be linked to an onboarding ID.');
       return;
+    }
+
+    // Create user in Supabase Auth officially without logging out the current admin
+    let createdUserId = '';
+    if (supabaseAdmin) {
+      const { data, error } = await supabaseAdmin.auth.admin.createUser({
+        email: newStaffEmail.trim(),
+        password: newStaffPassword,
+        email_confirm: true,
+        user_metadata: {
+          full_name: newStaffName.trim(),
+          department: newStaffDept
+        }
+      });
+      if (error) {
+        setStaffFeedback('Supabase Admin Auth Error: ' + error.message);
+        return;
+      }
+      createdUserId = data.user?.id || '';
+    } else {
+      const { data, error } = await supabase.auth.signUp({
+        email: newStaffEmail.trim(),
+        password: newStaffPassword,
+        options: {
+          data: {
+            full_name: newStaffName.trim(),
+            department: newStaffDept
+          }
+        }
+      });
+      if (error) {
+        setStaffFeedback('Supabase Auth Error: ' + error.message);
+        return;
+      }
+      createdUserId = data.user?.id || '';
+    }
+
+    if (createdUserId) {
+      // Map the user ID to the custom profiles table
+      const { error: profileError } = await supabase.from('profiles').insert({
+        id: createdUserId,
+        full_name: newStaffName.trim(),
+        department: newStaffDept,
+        email: newStaffEmail.trim(),
+        role: newStaffDept
+      });
+      if (profileError) {
+        console.error("Failed to map user to profiles table:", profileError.message);
+      }
     }
 
     const nextIdNum = registry.length + 1;
@@ -102,12 +161,13 @@ export default function SettingsHub() {
     expiryDate.setHours(expiryDate.getHours() + 48);
 
     const newStaff: StaffUser = {
-      id: `TEMP-${String(nextIdNum).padStart(3, '0')}`,
+      id: newStaffHRId.trim(),
       email: newStaffEmail.trim(),
       name: newStaffName.trim(),
       department: newStaffDept,
       hrApprovalStatus: 'Pending HR Approval',
-      temporaryAccessExpiry: expiryDate.toLocaleString()
+      temporaryAccessExpiry: expiryDate.toLocaleString(),
+      hrIssuedId: newStaffHRId.trim()
     };
 
     const updated = [...registry, newStaff];
@@ -285,6 +345,16 @@ export default function SettingsHub() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">HR-Issued Onboarding ID</label>
+                <input 
+                  type="text" 
+                  value={newStaffHRId}
+                  onChange={(e) => setNewStaffHRId(e.target.value)}
+                  placeholder="e.g. STAFF-XX-1234"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 outline-none"
+                />
+              </div>
+              <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Corporate Email</label>
                 <input 
                   type="email" 
@@ -294,6 +364,8 @@ export default function SettingsHub() {
                   className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 outline-none"
                 />
               </div>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Department Scope</label>
                 <select 
@@ -321,7 +393,7 @@ export default function SettingsHub() {
       </div>
 
       {/* Live Staff & Subordinate Directory */}
-      <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
+      <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4 mt-12">
         <h2 className="text-xl font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
           <Users className="w-5 h-5 text-brand-600" />
           Live Staff & Subordinate Directory
@@ -338,7 +410,13 @@ export default function SettingsHub() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {registry.map(staff => (
+              {registry.filter(staff => {
+                const myRole = localStorage.getItem('ilas_team_role') || 'Super Admin';
+                if (myRole === 'Super Admin' || myRole === 'CEO' || myRole === 'General Manager') return true;
+                if (myRole === 'HR Manager') return true; // HR sees everyone or can manage all staff
+                // Department heads only see their own department
+                return staff.department === myRole;
+              }).map(staff => (
                 <tr key={staff.id} className="hover:bg-slate-50 transition-colors">
                   <td className="p-3 font-mono text-slate-500">{staff.hrIssuedId || staff.id}</td>
                   <td className="p-3 font-bold text-slate-900">{staff.name}</td>

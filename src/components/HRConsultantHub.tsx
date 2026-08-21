@@ -7,6 +7,7 @@ import {
   getStaffRegistry, saveStaffMember, getAttendanceLogs, logStaffAttendance, 
   StaffUser, AttendanceLog, syncHRPayrollToFinance 
 } from '../lib/db'
+import { supabase, supabaseAdmin } from '../supabaseClient';
 
 interface HRTask {
   id: string
@@ -65,7 +66,27 @@ export default function HRConsultantHub() {
   const [showHelpModal, setShowHelpModal] = useState(false)
 
   const loadData = () => {
-    setStaffList(getStaffRegistry())
+    let currentStaff = getStaffRegistry();
+    
+    // Auto-Block System for 48-Hour Timer
+    const now = new Date();
+    let updated = false;
+    currentStaff = currentStaff.map(st => {
+      if (st.hrApprovalStatus === 'Pending HR Approval' && st.temporaryAccessExpiry) {
+        const expiry = new Date(st.temporaryAccessExpiry);
+        if (now > expiry) {
+          updated = true;
+          return { ...st, hrApprovalStatus: 'Blocked (Timeout)' as any, status: 'Suspended' as any } as StaffUser;
+        }
+      }
+      return st;
+    });
+
+    if (updated) {
+      localStorage.setItem('ilas_staff_registry', JSON.stringify(currentStaff));
+    }
+    
+    setStaffList(currentStaff)
     setAttendanceLogs(getAttendanceLogs())
   }
 
@@ -127,10 +148,54 @@ export default function HRConsultantHub() {
     }))
   }
 
-  const handleAddInternalStaff = (e: React.FormEvent) => {
+  const handleAddInternalStaff = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newName.trim() || !newEmail.trim()) return
+    if (!newName.trim() || !newEmail.trim() || !newPassword) {
+      alert("Name, Email, and Password are required.");
+      return;
+    }
     
+    let createdUserId = '';
+    if (supabaseAdmin) {
+      const { data, error } = await supabaseAdmin.auth.admin.createUser({
+        email: newEmail.trim(),
+        password: newPassword,
+        email_confirm: true,
+        user_metadata: { full_name: newName.trim(), department: newDept }
+      });
+      if (error) {
+        alert(`Supabase Admin Auth Error: ${error.message}`);
+        return;
+      }
+      createdUserId = data.user?.id || '';
+    } else {
+      const { data, error } = await supabase.auth.signUp({
+        email: newEmail.trim(),
+        password: newPassword,
+        options: {
+          data: { full_name: newName.trim(), department: newDept }
+        }
+      });
+      if (error) {
+        alert(`Supabase Auth Error: ${error.message}`);
+        return;
+      }
+      createdUserId = data.user?.id || '';
+    }
+
+    if (createdUserId) {
+      const { error: profileError } = await supabase.from('profiles').insert({
+        id: createdUserId,
+        full_name: newName.trim(),
+        department: newDept,
+        email: newEmail.trim(),
+        role: newDept
+      });
+      if (profileError) {
+        console.error("Failed to map user to profiles table:", profileError.message);
+      }
+    }
+
     const nextIdNum = Math.floor(Math.random() * 9000) + 1000;
     const generatedId = `STAFF-${newDept.substring(0,2).toUpperCase()}-${nextIdNum}`;
 
@@ -358,6 +423,7 @@ export default function HRConsultantHub() {
           <form onSubmit={handleAddInternalStaff} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border text-xs">
             <input type="text" required placeholder="Staff Full Name" value={newName} onChange={(e) => setNewName(e.target.value)} className="p-2.5 border rounded-xl bg-white outline-none" />
             <input type="email" required placeholder="Corporate Email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="p-2.5 border rounded-xl bg-white outline-none" />
+            <input type="password" required placeholder="Staff Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="p-2.5 border rounded-xl bg-white outline-none" />
             <input type="text" placeholder="Phone Number" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} className="p-2.5 border rounded-xl bg-white outline-none" />
             <select value={newDept} onChange={(e: any) => setNewDept(e.target.value)} className="p-2.5 border rounded-xl bg-white outline-none font-bold">
               <option value="Academic Counselor">Academic Counselor</option>
@@ -374,10 +440,10 @@ export default function HRConsultantHub() {
 
           <div className="space-y-4">
             <div>
-              <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider mb-2">Pending Temporary Subordinates</h4>
+              <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider mb-2">Activation Requests / Pending Approvals</h4>
               <div className="space-y-2">
                 {staffList.filter(st => st.hrApprovalStatus === 'Pending HR Approval').length === 0 && (
-                  <p className="text-xs text-slate-500 italic p-3 bg-slate-50 rounded-xl border border-dashed">No pending approvals.</p>
+                  <p className="text-xs text-slate-500 italic p-3 bg-slate-50 rounded-xl border border-dashed">No pending approvals in queue.</p>
                 )}
                 {staffList.filter(st => st.hrApprovalStatus === 'Pending HR Approval').map(st => (
                   <div key={st.id} className="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex justify-between items-center text-xs">
@@ -388,7 +454,7 @@ export default function HRConsultantHub() {
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => handleApproveSubordinate(st.id)} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl cursor-pointer">
-                        Verify & Issue ID
+                        Approve & Activate
                       </button>
                       <button onClick={() => handleRejectSubordinate(st.id)} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl cursor-pointer">
                         Reject
@@ -398,6 +464,28 @@ export default function HRConsultantHub() {
                 ))}
               </div>
             </div>
+
+            {staffList.some(st => (st.hrApprovalStatus as any) === 'Blocked (Timeout)') && (
+              <div>
+                <h4 className="font-bold text-rose-700 text-xs uppercase tracking-wider mb-2">Blocked / Suspended (Timeout)</h4>
+                <div className="space-y-2">
+                  {staffList.filter(st => (st.hrApprovalStatus as any) === 'Blocked (Timeout)').map(st => (
+                    <div key={st.id} className="p-3 bg-rose-50 border border-rose-200 rounded-2xl flex justify-between items-center text-xs">
+                      <div>
+                        <div className="font-black text-rose-900">{st.name} <span className="text-[10px] text-rose-700 font-mono">({st.id})</span></div>
+                        <div className="text-rose-800">{st.email} • <span className="font-bold">{st.department}</span></div>
+                        <div className="text-[10px] text-rose-600 mt-1 font-bold">Auto-Blocked: 48-Hour Timer Expired</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleApproveSubordinate(st.id)} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl cursor-pointer">
+                          Re-activate / Approve
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div>
               <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider mb-2">Verified Corporate Staff</h4>
@@ -432,7 +520,7 @@ export default function HRConsultantHub() {
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-bold text-xs text-slate-700">Staff Registry Master List</h4>
+            <h4 className="font-bold text-xs text-slate-700">Staff Registry Master List & Audit Report</h4>
             <div className="border rounded-2xl overflow-hidden">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-100 font-black">
@@ -441,15 +529,25 @@ export default function HRConsultantHub() {
                     <th className="p-3">Name</th>
                     <th className="p-3">Email</th>
                     <th className="p-3">Department</th>
+                    <th className="p-3">Current Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {staffList.map(st => (
                     <tr key={st.id}>
-                      <td className="p-3 font-mono">{st.id}</td>
+                      <td className="p-3 font-mono">{st.hrIssuedId || st.id}</td>
                       <td className="p-3 font-bold">{st.name}</td>
                       <td className="p-3 text-slate-500">{st.email}</td>
                       <td className="p-3 uppercase font-semibold">{st.department}</td>
+                      <td className="p-3">
+                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase ${
+                          st.hrApprovalStatus === 'Verified' ? 'bg-emerald-100 text-emerald-800' :
+                          (st.hrApprovalStatus as any) === 'Blocked (Timeout)' ? 'bg-rose-100 text-rose-800' :
+                          'bg-amber-100 text-amber-800'
+                        }`}>
+                          {st.hrApprovalStatus || 'Verified'}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
