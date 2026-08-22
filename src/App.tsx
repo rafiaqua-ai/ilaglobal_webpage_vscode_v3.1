@@ -25,6 +25,7 @@ import EducationPage from './components/EducationPage'
 import ApplicationPoolPage from './components/ApplicationPoolPage'
 import PrivacyPolicyPage from './components/PrivacyPolicyPage'
 import CookieBanner from './components/CookieBanner'
+import MasterDepartmentHub from './components/MasterDepartmentHub'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home')
@@ -46,7 +47,10 @@ function App() {
     const handleHashChange = () => {
       const hash = window.location.hash
       
-      if (hash === '#german-language') {
+      if (hash === '#master-hub' || hash === '#department-hub') {
+        setCurrentPage('master-hub')
+        window.scrollTo(0, 0)
+      } else if (hash === '#german-language') {
         setCurrentPage('course-page')
         setActiveCourseTitle('German Language A1–C2')
         setActiveCourseCategory('Language & Proficiency')
@@ -62,7 +66,6 @@ function App() {
         window.scrollTo(0, 0)
       } else if (hash === '#visa-page' || hash.startsWith('#visa-page#')) {
         setCurrentPage('visa-page')
-        // Scroll handled within component or let it scroll to top if just #visa-page
         if (hash === '#visa-page') window.scrollTo(0, 0)
       } else if (hash === '#work-while-you-study-page' || hash.startsWith('#work-while-you-study-page#')) {
         setCurrentPage('work-while-you-study-page')
@@ -88,106 +91,6 @@ function App() {
       } else if (hash === '#education' || hash.startsWith('#education#')) {
         setCurrentPage('education')
         if (hash === '#education') window.scrollTo(0, 0)
-      } else if (hash.startsWith('#course-')) {
-        const courseKey = hash.replace('#course-', '')
-        setCurrentPage('course-page')
-        
-        switch(courseKey) {
-          case 'ielts':
-            setActiveCourseTitle('IELTS / TOEFL Proficiency')
-            setActiveCourseCategory('Language & Proficiency')
-            break
-          case 'pte':
-            setActiveCourseTitle('PTE (Pearson Test of English)')
-            setActiveCourseCategory('Language & Proficiency')
-            break
-          case 'software-engineering':
-            setActiveCourseTitle('Software Engineering & Full Stack')
-            setActiveCourseCategory('Professional & Career Skilling')
-            break
-          case 'digital-marketing':
-            setActiveCourseTitle('Digital Marketing & E-commerce')
-            setActiveCourseCategory('Professional & Career Skilling')
-            break
-          case 'project-management':
-            setActiveCourseTitle('Project Management (PMP / Agile)')
-            setActiveCourseCategory('Professional & Career Skilling')
-            break
-          case 'client-management':
-            setActiveCourseTitle('Client Relationship Management')
-            setActiveCourseCategory('Professional & Career Skilling')
-            break
-          case 'sap':
-            setActiveCourseTitle('SAP S/4HANA (FI/CO, MM, SD)')
-            setActiveCourseCategory('Premium Certification')
-            break
-          case 'cloud-devops':
-            setActiveCourseTitle('Cloud Architecture & DevOps')
-            setActiveCourseCategory('Premium Certification')
-            break
-          case 'data-science':
-            setActiveCourseTitle('Data Science & AI Engineering')
-            setActiveCourseCategory('Premium Certification')
-            break
-          case 'financial-accounting':
-            setActiveCourseTitle('Financial Accounting (Tally, QuickBooks)')
-            setActiveCourseCategory('Fundamental & Practical')
-            break
-          case 'ui-ux':
-            setActiveCourseTitle('UI/UX Design & Graphic Fundamentals')
-            setActiveCourseCategory('Fundamental & Practical')
-            break
-          case 'excel':
-            setActiveCourseTitle('Microsoft Excel Advanced')
-            setActiveCourseCategory('Job-Related Program')
-            break
-          case 'bookkeeping':
-            setActiveCourseTitle('Bookkeeping & Tally')
-            setActiveCourseCategory('Job-Related Program')
-            break
-          case 'python':
-            setActiveCourseTitle('Python Basics')
-            setActiveCourseCategory('Job-Related Program')
-            break
-          case 'data-analytics':
-            setActiveCourseTitle('Data Analytics Fundamentals')
-            setActiveCourseCategory('Job-Related Program')
-            break
-          case 'medical-fsp':
-            setActiveCourseTitle('Medical Terminology (FSP Prep)')
-            setActiveCourseCategory('Job-Related Program')
-            break
-          default:
-            setActiveCourseTitle(courseKey.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '))
-            setActiveCourseCategory('Specialized Program')
-        }
-        window.scrollTo(0, 0)
-      } else if (hash.startsWith('#education#')) {
-        const courseKey = hash.replace('#education#', '')
-        setCurrentPage('course-page')
-        
-        switch(courseKey) {
-          case 'german-language':
-            setActiveCourseTitle('German Language A1–C2')
-            setActiveCourseCategory('Language & Proficiency')
-            break
-          case 'ielts':
-            setActiveCourseTitle('IELTS / TOEFL / PTE')
-            setActiveCourseCategory('Language & Proficiency')
-            break
-          case 'software-training':
-            setActiveCourseTitle('Software & Tech Training')
-            setActiveCourseCategory('Professional & Career Skilling')
-            break
-          case 'job-related-programs':
-            setActiveCourseTitle('Job-Related Specialized Programs')
-            setActiveCourseCategory('Professional & Career Skilling')
-            break
-          default:
-            setActiveCourseTitle(courseKey.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '))
-            setActiveCourseCategory('Specialized Program')
-        }
-        window.scrollTo(0, 0)
       } else {
         setCurrentPage('home')
         window.scrollTo(0, 0)
@@ -200,13 +103,15 @@ function App() {
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
 
-  const isAdminPage = currentPage === 'admin-portal'
+  const isAdminPage = currentPage === 'admin-portal' || currentPage === 'master-hub'
 
   return (
     <div className="min-h-screen">
       {!isAdminPage && <Navbar />}
       <main>
-        {currentPage === 'german-language' ? (
+        {currentPage === 'master-hub' ? (
+          <MasterDepartmentHub departmentName="Education & Training Management Hub" />
+        ) : currentPage === 'german-language' ? (
           <GermanLanguagePage />
         ) : currentPage === 'course-page' ? (
           <CoursePage courseTitle={activeCourseTitle} category={activeCourseCategory} />
