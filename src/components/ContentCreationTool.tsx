@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PenTool, Send, Copy, Share2, Sparkles, UploadCloud, CheckCircle2, Clock } from 'lucide-react';
+import { PenTool, Send, Sparkles, UploadCloud, CheckCircle2, Clock } from 'lucide-react';
 
 interface ContentCreationToolProps {
   departmentName: string;
@@ -20,9 +20,9 @@ export default function ContentCreationTool({ departmentName }: ContentCreationT
     
     setIsGenerating(true);
     setTimeout(() => {
-      setGeneratedContent(`🚀 Special Update from ${departmentName}!\n\n${topic}\n\nJoin us at ILA Global to experience top-tier services and continuous growth. Click the link below to get started and talk to our experts today!\n\n🔗 https://ilaglobal.com/apply\n\n#ILAGlobal #${departmentName.replace(/\s+/g, '')} #CareerGrowth`);
+      setGeneratedContent(`Special Update from ${departmentName}!\n\n${topic}\n\nJoin us at ILA Global to experience top-tier services and continuous growth. Click the link below to get started and talk to our experts today!\n\nhttps://ilaglobal.com/apply\n\n#ILAGlobal #${departmentName.replace(/\s+/g, '')} #CareerGrowth`);
       setIsGenerating(false);
-      setSubmissionStatus('idle'); // reset status if generating new content
+      setSubmissionStatus('idle');
     }, 1000);
   };
 
@@ -36,7 +36,6 @@ export default function ContentCreationTool({ departmentName }: ContentCreationT
     if (!generatedContent && !mediaUploaded) return;
     setSubmissionStatus('submitted');
     
-    // Dispatch a custom event to notify the Marketing Studio
     const event = new CustomEvent('ilas-content-submitted', {
       detail: {
         department: departmentName,
@@ -135,7 +134,7 @@ export default function ContentCreationTool({ departmentName }: ContentCreationT
       {submissionStatus === 'submitted' && (
         <div className="text-[10px] text-slate-500 flex items-start gap-1">
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-          <span>Your content is pending multi-level approval (Dept Head -> Marketing Head). Once approved, a ready-to-broadcast copy will be routed to your registered WhatsApp mobile number.</span>
+          <span>Your content is pending multi-level approval. Once approved, a ready-to-broadcast copy will be routed to your registered WhatsApp mobile number.</span>
         </div>
       )}
     </div>
