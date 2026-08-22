@@ -14,7 +14,7 @@ const footerLinks = {
     { label: 'Portal Login', href: '#', onClick: () => window.dispatchEvent(new CustomEvent('open-portal-login')) },
   ],
   Legal: [
-    { label: 'Privacy Policy', href: '#' },
+    { label: 'Privacy Policy', href: '#privacy-policy' },
     { label: 'Terms of Service', href: '#' },
     { label: 'Cookie Policy', href: '#' },
   ],

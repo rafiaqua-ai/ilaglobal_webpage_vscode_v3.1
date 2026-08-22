@@ -23,6 +23,8 @@ import FloatingContact from './components/FloatingContact'
 import StudyAbroadPage from './components/StudyAbroadPage'
 import EducationPage from './components/EducationPage'
 import ApplicationPoolPage from './components/ApplicationPoolPage'
+import PrivacyPolicyPage from './components/PrivacyPolicyPage'
+import CookieBanner from './components/CookieBanner'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home')
@@ -76,6 +78,9 @@ function App() {
         window.scrollTo(0, 0)
       } else if (hash.startsWith('#applications') || hash.startsWith('#apply')) {
         setCurrentPage('applications')
+        window.scrollTo(0, 0)
+      } else if (hash === '#privacy-policy') {
+        setCurrentPage('privacy-policy')
         window.scrollTo(0, 0)
       } else if (hash === '#study-abroad' || hash.startsWith('#study-abroad#')) {
         setCurrentPage('study-abroad')
@@ -227,6 +232,8 @@ function App() {
           <EducationPage />
         ) : currentPage === 'applications' ? (
           <ApplicationPoolPage />
+        ) : currentPage === 'privacy-policy' ? (
+          <PrivacyPolicyPage />
         ) : (
           <HomePage />
         )}
@@ -237,6 +244,7 @@ function App() {
       {!isAdminPage && <LanguageTrainer />}
       {!isAdminPage && <LiveConsultant />}
       {!isAdminPage && <FloatingContact />}
+      <CookieBanner />
     </div>
   )
 }

@@ -13,6 +13,8 @@ import ExecutiveOverviewHub from './ExecutiveOverviewHub';
 import GMConsole from './GMConsole';
 import ITAdminConsole from './ITAdminConsole';
 import EducationHub from './EducationHub'; // Integrated Education Hub
+import ITMarketingAnalyticsDashboard from './ITMarketingAnalyticsDashboard';
+import ContentCreationTool from './ContentCreationTool';
 
 interface VisitorStatType {
   totalVisitors: number;
@@ -37,13 +39,13 @@ export default function AdminPortal() {
 
   // Allowed Tabs Config
   const allowedTabs: Record<string, string[]> = {
-    'Super Admin': ['super_admin_hub', 'overview', 'gm', 'education', 'study_abroad', 'visa', 'work_while_you_study', 'jobs', 'rewards', 'leads', 'analytics', 'sales', 'hr', 'finance', 'marketing', 'activity', 'it_admin', 'settings'],
-    'CEO': ['overview', 'gm', 'education', 'study_abroad', 'visa', 'work_while_you_study', 'jobs', 'rewards', 'leads', 'analytics', 'sales', 'hr', 'finance', 'marketing', 'activity', 'it_admin', 'settings'],
-    'General Manager': ['gm', 'overview', 'education', 'study_abroad', 'visa', 'work_while_you_study', 'jobs', 'rewards', 'leads', 'analytics', 'sales', 'hr', 'finance', 'marketing', 'activity', 'it_admin', 'settings'],
-    'Tech Admin': ['super_admin_hub', 'overview', 'gm', 'activity', 'it_admin', 'settings'],
+    'Super Admin': ['super_admin_hub', 'overview', 'gm', 'education', 'study_abroad', 'visa', 'work_while_you_study', 'jobs', 'rewards', 'leads', 'analytics', 'marketing_analytics', 'sales', 'hr', 'finance', 'marketing', 'activity', 'it_admin', 'settings'],
+    'CEO': ['overview', 'gm', 'education', 'study_abroad', 'visa', 'work_while_you_study', 'jobs', 'rewards', 'leads', 'analytics', 'marketing_analytics', 'sales', 'hr', 'finance', 'marketing', 'activity', 'it_admin', 'settings'],
+    'General Manager': ['gm', 'overview', 'education', 'study_abroad', 'visa', 'work_while_you_study', 'jobs', 'rewards', 'leads', 'analytics', 'marketing_analytics', 'sales', 'hr', 'finance', 'marketing', 'activity', 'it_admin', 'settings'],
+    'Tech Admin': ['super_admin_hub', 'overview', 'gm', 'marketing_analytics', 'activity', 'it_admin', 'settings'],
     'Finance Officer': ['sales', 'finance'],
     'HR Manager': ['hr', 'work_while_you_study'],
-    'Marketing Exec': ['marketing', 'rewards'],
+    'Marketing Exec': ['marketing', 'marketing_analytics', 'rewards'],
     'Academic Counselor': ['education', 'leads', 'activity']
   };
 
@@ -266,6 +268,9 @@ export default function AdminPortal() {
               <button onClick={() => setActiveTab('it_admin')} className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'it_admin' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
                 <ShieldCheck className="w-4 h-4" /> IT & Security
               </button>
+              <button onClick={() => setActiveTab('marketing_analytics')} className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'marketing_analytics' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
+                <BarChart2 className="w-4 h-4" /> IT & Marketing Analytics
+              </button>
               <button onClick={() => setActiveTab('activity')} className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'activity' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
                 <Activity className="w-4 h-4" /> ILA Monitor & Radar
               </button>
@@ -315,17 +320,18 @@ export default function AdminPortal() {
                   <button onClick={() => setShowAuthModal(true)} className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl cursor-pointer">Configure Auth Gate 🔒</button>
                 </div>
               </div>
+              <ContentCreationTool departmentName="Super Admin" />
             </div>
           )}
 
-          {activeTab === 'overview' && <ExecutiveOverviewHub />}
-          {activeTab === 'gm' && <GMConsole />}
-          {activeTab === 'hr' && <HRConsultantHub />}
-          {activeTab === 'finance' && <FinanceCommissionHub />}
-          {activeTab === 'marketing' && <MarketingStudioHub />}
+          {activeTab === 'overview' && <><ExecutiveOverviewHub /><ContentCreationTool departmentName="Executive Overview" /></>}
+          {activeTab === 'gm' && <><GMConsole /><ContentCreationTool departmentName="General Manager" /></>}
+          {activeTab === 'hr' && <><HRConsultantHub /><ContentCreationTool departmentName="HR Department" /></>}
+          {activeTab === 'finance' && <><FinanceCommissionHub /><ContentCreationTool departmentName="Finance Hub" /></>}
+          {activeTab === 'marketing' && <><MarketingStudioHub /><ContentCreationTool departmentName="Marketing Studio" /></>}
 
           {/* EDUCATION & TRAINING DEPARTMENT (Integrated EducationHub) */}
-          {activeTab === 'education' && <EducationHub />}
+          {activeTab === 'education' && <><EducationHub /><ContentCreationTool departmentName="Education Hub" /></>}
 
           {/* STUDY ABROAD DEPARTMENT */}
           {activeTab === 'study_abroad' && (
@@ -349,6 +355,7 @@ export default function AdminPortal() {
                   <button disabled={!isAuthorizedToEdit} className="px-3 py-1.5 bg-brand-600 text-white rounded-lg font-bold disabled:opacity-50">Verify Checklists</button>
                 </div>
               </div>
+              <ContentCreationTool departmentName="Study Abroad" />
             </div>
           )}
 
@@ -374,6 +381,7 @@ export default function AdminPortal() {
                   <button disabled={!isAuthorizedToEdit} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold disabled:opacity-50">Update Rules</button>
                 </div>
               </div>
+              <ContentCreationTool departmentName="Visa Processing" />
             </div>
           )}
 
@@ -381,6 +389,7 @@ export default function AdminPortal() {
             <div className="space-y-6">
               <h2 className="text-xl font-black text-slate-900">Work While You Study (Ausbildung) Operations</h2>
               <p className="text-xs text-slate-500">Manage candidate dual-system contracts combining training with salary stipends.</p>
+              <ContentCreationTool departmentName="Work While You Study" />
             </div>
           )}
 
@@ -388,6 +397,7 @@ export default function AdminPortal() {
             <div className="space-y-6">
               <h2 className="text-xl font-black text-slate-900">Jobs & Career Search Engine</h2>
               <p className="text-xs text-slate-500">Connect candidates directly with German hospital groups and tech firms.</p>
+              <ContentCreationTool departmentName="Jobs & Careers" />
             </div>
           )}
 
@@ -395,6 +405,7 @@ export default function AdminPortal() {
             <div className="space-y-6">
               <h2 className="text-xl font-black text-slate-900">Reward Plan & Commission Hub</h2>
               <p className="text-xs text-slate-500">Configure reward points, franchise referral commissions, and student milestone bonuses.</p>
+              <ContentCreationTool departmentName="Rewards & Commissions" />
             </div>
           )}
 
@@ -412,13 +423,15 @@ export default function AdminPortal() {
                   </div>
                 ))}
               </div>
+              <ContentCreationTool departmentName="Leads CRM" />
             </div>
           )}
 
-          {activeTab === 'sales' && <div className="text-xs font-bold text-slate-600">Sales & POS Hub Management</div>}
-          {activeTab === 'activity' && <IlasActivityHub />}
-          {activeTab === 'it_admin' && <ITAdminConsole />}
-          {activeTab === 'settings' && <SettingsHub />}
+          {activeTab === 'sales' && <div><div className="text-xs font-bold text-slate-600 mb-4">Sales & POS Hub Management</div><ContentCreationTool departmentName="Sales Hub" /></div>}
+          {activeTab === 'activity' && <><IlasActivityHub /><ContentCreationTool departmentName="ILA Monitor" /></>}
+          {activeTab === 'it_admin' && <><ITAdminConsole /><ContentCreationTool departmentName="IT & Security" /></>}
+          {activeTab === 'marketing_analytics' && <><ITMarketingAnalyticsDashboard /><ContentCreationTool departmentName="Marketing Analytics" /></>}
+          {activeTab === 'settings' && <><SettingsHub /><ContentCreationTool departmentName="Settings" /></>}
 
         </div>
       </div>

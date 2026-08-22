@@ -103,15 +103,23 @@ export default function PortalLogin() {
 
       // For demonstration, after successful Supabase auth we map to internal roles
       if (selectedRole === 'team') {
+        let assignedRole = 'Super Admin'; // Default fallback
+        if (data.user?.id) {
+          const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
+          if (profile && profile.role) {
+            assignedRole = profile.role;
+          }
+        }
+
         localStorage.setItem('ilas_auth_role', 'team');
-        localStorage.setItem('ilas_team_role', 'Super Admin'); // Mocking role for now
+        localStorage.setItem('ilas_team_role', assignedRole);
         localStorage.setItem('ilas_team_scope', 'all');
         localStorage.setItem('ilas_user_name', data.user?.email || 'Admin');
         
         window.dispatchEvent(new CustomEvent('ilas-team-role-changed'));
         window.dispatchEvent(new CustomEvent('ilas-auth-state-changed'));
         
-        setSuccess(`Welcome back! Routing directly to Admin Dashboard...`);
+        setSuccess(`Welcome back! Routing directly to ${assignedRole} Dashboard...`);
         setTimeout(() => {
           window.location.hash = '#admin-dashboard';
           setOpen(false);
@@ -133,7 +141,7 @@ export default function PortalLogin() {
     }
   }
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setSuccess(null)
@@ -150,8 +158,36 @@ export default function PortalLogin() {
 
     if (selectedRole === 'team') {
       setSuccess(`Account registration for staff is managed by Admins. Please contact support to provision your account.`);
-    } else {
-      // Student or consultant registration simulation
+      return;
+    }
+
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password,
+        options: {
+          data: {
+            full_name: name.trim(),
+            role: selectedRole
+          }
+        }
+      });
+
+      if (signUpError) {
+        setError(signUpError.message);
+        return;
+      }
+
+      if (data.user?.id) {
+        const { error: profileError } = await supabase.from('profiles').insert({
+          id: data.user.id,
+          full_name: name.trim(),
+          email: email.trim(),
+          role: selectedRole
+        });
+        if (profileError) console.error("Profile map error:", profileError.message);
+      }
+
       setSuccess(`Account registered successfully for role: ${selectedRole}! Logging you in...`)
       setTimeout(() => {
         localStorage.setItem('ilas_auth_role', selectedRole)
@@ -168,6 +204,8 @@ export default function PortalLogin() {
         }
         setOpen(false)
       }, 1500)
+    } catch (err: any) {
+      setError(err.message || 'An error occurred during registration.');
     }
   }
 

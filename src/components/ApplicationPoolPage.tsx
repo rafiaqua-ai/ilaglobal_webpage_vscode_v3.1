@@ -232,8 +232,8 @@ export default function ApplicationPoolPage() {
           department = 'Job & Career / Work While You Study';
           category = 'Jobs';
           customPath = `${formData.jobDomain} (${formData.roleLevel}) - To: ${formData.targetLocation}`;
-          confirmationTitle = 'Placement Match Ready';
-          confirmationMsg = 'Placement analysis complete. Your job routing and employer matching pipeline is now active.';
+          confirmationTitle = 'Application Submitted';
+          confirmationMsg = 'You will be under a 6-month probation and training period in your department with a reasonable probation salary, which will increase based on department performance. We will contact you soon.';
         } else if (formData.service === 'rewards') {
           department = 'Partnerships & Rewards';
           category = 'Jobs';
@@ -486,27 +486,64 @@ export default function ApplicationPoolPage() {
                   {formData.service === 'jobs' && (
                     <div className="space-y-4 animate-fade-in">
                       <div className="grid grid-cols-2 gap-4">
-                        <div>
+                        <div className="relative">
                           <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1.5">Job Domain</label>
-                          <input type="text" name="jobDomain" value={formData.jobDomain} onChange={handleInputChange} className="w-full px-4 py-3.5 rounded-xl border border-slate-200 outline-none focus:border-brand-500 text-sm font-semibold" placeholder="e.g. Software, Healthcare" />
+                          <select name="jobDomain" value={formData.jobDomain} onChange={handleInputChange} className="w-full px-4 py-3.5 rounded-xl border border-slate-200 outline-none focus:border-brand-500 text-sm font-semibold appearance-none bg-white">
+                            <option value="Office Admin & Accounts">Office Admin & Accounts</option>
+                            <option value="Software">Software</option>
+                            <option value="SEO & Social AI">SEO & Social AI</option>
+                            <option value="Import-Export Trade">Import-Export Trade</option>
+                            <option value="Engineering & Technical">Engineering & Technical</option>
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 pt-6 text-slate-500">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                          </div>
                         </div>
-                        <div>
+                        <div className="relative">
                           <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1.5">Role Level</label>
-                          <select name="roleLevel" value={formData.roleLevel} onChange={handleInputChange} className="w-full px-4 py-3.5 rounded-xl border border-slate-200 outline-none focus:border-brand-500 text-sm font-bold bg-white text-slate-800">
+                          <select name="roleLevel" value={formData.roleLevel} onChange={handleInputChange} className="w-full px-4 py-3.5 rounded-xl border border-slate-200 outline-none focus:border-brand-500 text-sm font-bold bg-white text-slate-800 appearance-none">
                             <option value="Fresher / Entry Level">Fresher / Entry Level</option>
                             <option value="Experienced (1-3 Yrs)">Experienced (1-3 Yrs)</option>
                             <option value="Senior (3+ Yrs)">Senior (3+ Yrs)</option>
                           </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 pt-6 text-slate-500">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                          </div>
                         </div>
                       </div>
+                      
+                      <div className="p-3 bg-brand-50 border border-brand-100 rounded-xl text-xs text-brand-800 font-semibold mb-4">
+                        {formData.jobDomain === 'Office Admin & Accounts' && 'AI-Assisted Accounting, Billing & Auditing / Office Administration for 6 months'}
+                        {formData.jobDomain === 'Software' && 'AI-Powered Web Development & Full-Stack Projects for 6 months'}
+                        {formData.jobDomain === 'SEO & Social AI' && 'High-Level SEO, Digital Client Campaigns & Social Media Growth for 6 months'}
+                        {formData.jobDomain === 'Import-Export Trade' && 'European Sourcing, Export Documentation & Cross-Border Logistics for 6 months'}
+                        {formData.jobDomain === 'Engineering & Technical' && 'Solar Installation, EV Diagnostics & Mechanical Toolkits for 6 months'}
+                        {!['Office Admin & Accounts', 'Software', 'SEO & Social AI', 'Import-Export Trade', 'Engineering & Technical'].includes(formData.jobDomain) && 'Select a Job Domain to see description'}
+                      </div>
+
                       <div className="grid grid-cols-2 gap-4">
-                        <div>
+                        <div className="relative">
                           <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1.5">Current Location</label>
-                          <input type="text" name="currentLocation" value={formData.currentLocation} onChange={handleInputChange} className="w-full px-4 py-3.5 rounded-xl border border-slate-200 outline-none focus:border-brand-500 text-sm font-semibold" placeholder="City, Country" />
+                          <select name="currentLocation" value={formData.currentLocation} onChange={handleInputChange} className="w-full px-4 py-3.5 rounded-xl border border-slate-200 outline-none focus:border-brand-500 text-sm font-semibold appearance-none bg-white">
+                            <option value="India">India</option>
+                            <option value="UAE">UAE</option>
+                            <option value="Global Country">Global Country</option>
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 pt-6 text-slate-500">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                          </div>
                         </div>
-                        <div>
+                        <div className="relative">
                           <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1.5">Target Location</label>
-                          <input type="text" name="targetLocation" value={formData.targetLocation} onChange={handleInputChange} className="w-full px-4 py-3.5 rounded-xl border border-slate-200 outline-none focus:border-brand-500 text-sm font-semibold" placeholder="e.g. Germany" />
+                          <select name="targetLocation" value={formData.targetLocation} onChange={handleInputChange} className="w-full px-4 py-3.5 rounded-xl border border-slate-200 outline-none focus:border-brand-500 text-sm font-semibold appearance-none bg-white">
+                            <option value="Europe">Europe (Project Onboarding)</option>
+                            <option value="Germany">Germany</option>
+                            <option value="UK">United Kingdom</option>
+                            <option value="Remote">Remote</option>
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 pt-6 text-slate-500">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                          </div>
                         </div>
                       </div>
                       <div>
@@ -685,7 +722,7 @@ export default function ApplicationPoolPage() {
                           1. Check your email for the detailed PDF report.
                         </div>
                         <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 font-medium">
-                          2. A senior consultant will contact you at {formData.phone} shortly.
+                          2. A senior consultant will contact you at {formData.phone} shortly. For further inquiries, call +49 123 456 7890.
                         </div>
                         <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 font-medium">
                           3. Prepare your preliminary documents for the onboarding portal.
