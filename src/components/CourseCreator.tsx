@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Save, Edit, RefreshCw, Trash2, Send, CheckSquare, Plus, Upload, BookOpen, Clock, Users, BookMarked, Settings, Info, Briefcase, FileUp } from 'lucide-react';
 
 interface CourseItem {
@@ -13,48 +13,104 @@ interface CourseItem {
   students: string;
 }
 
-const CourseCreator: React.FC = () => {
-  const navigationItems = [
-    'HOD DB',
-    'LIBRARY & CLASS ROOM',
-    'WALKIN ENROLLING',
-    'ONLINE ENQUIRY',
-    'SERVICES & BATCHES',
-    'COURSE CREATOR',
-    'AI COURSE CREATOR',
-    'Task Delegation',
-    'STAFF & ATTENDANCE',
-    'STUDENT ATTN',
-    'EXAM REST'
-  ];
+// Simulated imported state from ServicesAndBatches module
+const availableServices = [
+  { id: '1', name: 'Premium IELTS Camp', method: 'Live Class', batch: 'Morning Batch 1 (10 AM - 12 PM)' },
+  { id: '2', name: 'German A1 FastTrack', method: 'Online Class', batch: 'Weekend Batch (2 PM - 5 PM)' }
+];
 
-  const courseList: CourseItem[] = [
+const CourseCreator: React.FC = () => {
+  const [courseList, setCourseList] = useState<CourseItem[]>([
     { id: '1', name: 'SAP Basics', staff: 'Nadeem - ID 091', chapter: '12', duration: '12 Weeks', methods: 'Live Class', materials: 'Uploaded', fee: '$500', students: '25' },
-    { id: '2', name: 'German A1', staff: 'AI Bot', chapter: '15', duration: '8 Weeks', methods: 'Video+AI', materials: 'Pending', fee: '$200', students: '120' }
-  ];
+    { id: '2', name: 'German A1', staff: 'AI Bot', chapter: '15', duration: '8 Weeks', methods: 'Online Class', materials: 'Pending', fee: '$200', students: '120' }
+  ]);
+
+  // Form State
+  const [courseName, setCourseName] = useState('');
+  const [chapters, setChapters] = useState('');
+  const [durationVal, setDurationVal] = useState('');
+  const [durationType, setDurationType] = useState('Weeks');
+  const [staff, setStaff] = useState('');
+  const [fee, setFee] = useState('');
+  const [selectedServiceId, setSelectedServiceId] = useState('');
+  const [selectedCourse, setSelectedCourse] = useState<CourseItem | null>(null);
+
+  const handleRowClick = (course: CourseItem) => {
+    setSelectedCourse(course);
+    setCourseName(course.name);
+    setChapters(course.chapter);
+    setDurationVal(course.duration.split(' ')[0]);
+    setDurationType(course.duration.split(' ')[1] || 'Weeks');
+    setStaff(course.staff);
+    setFee(course.fee.replace('$', ''));
+  };
+
+  const handleReset = () => {
+    setSelectedCourse(null);
+    setCourseName('');
+    setChapters('');
+    setDurationVal('');
+    setDurationType('Weeks');
+    setStaff('');
+    setFee('');
+    setSelectedServiceId('');
+  };
+
+  const handleDelete = () => {
+    if (!selectedCourse) return;
+    const confirm = window.confirm("Are you sure you want to delete this course?");
+    if (confirm) {
+      setCourseList(prev => prev.filter(c => c.id !== selectedCourse.id));
+      handleReset();
+    }
+  };
+
+  const handleSave = () => {
+    if (!courseName || !chapters || !durationVal || !staff) {
+      alert("Please fill all required course metadata fields.");
+      return;
+    }
+    
+    let methodString = "Custom";
+    if (selectedServiceId) {
+      const s = availableServices.find(s => s.id === selectedServiceId);
+      if (s) methodString = `${s.method} (${s.batch})`;
+    }
+
+    const newCourse: CourseItem = {
+      id: selectedCourse?.id || Math.random().toString(36).substr(2, 9),
+      name: courseName,
+      staff: staff,
+      chapter: chapters,
+      duration: `${durationVal} ${durationType}`,
+      methods: methodString,
+      materials: 'Pending Uploads',
+      fee: `$${fee || '0'}`,
+      students: '0'
+    };
+
+    if (selectedCourse) {
+      setCourseList(prev => prev.map(c => c.id === selectedCourse.id ? newCourse : c));
+      alert("Course Updated.");
+    } else {
+      setCourseList(prev => [...prev, newCourse]);
+      alert("Course Created and Saved.");
+    }
+    handleReset();
+  };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 font-sans">
-      {/* Master Navigation Header */}
-      <header className="bg-brand-900 text-white shadow-md sticky top-0 z-50">
-        <div className="flex overflow-x-auto no-scrollbar items-center px-4 py-3 gap-6 text-sm font-medium whitespace-nowrap">
-          {navigationItems.map(item => (
-            <button key={item} className={`hover:text-brand-300 transition-colors ${item === 'COURSE CREATOR' ? 'text-accent-400 border-b-2 border-accent-400' : ''}`}>
-              {item}
-            </button>
-          ))}
-        </div>
-      </header>
+    <div className="flex-1 p-4 md:p-6 w-full flex flex-col gap-6 bg-slate-50 font-sans min-h-screen">
       
       {/* Header Tracking Bar */}
-      <div className="bg-white border-b border-slate-200 px-4 py-2 flex justify-end gap-6 text-xs font-semibold text-slate-600">
+      <div className="bg-white border-b border-slate-200 px-4 py-2 flex justify-end gap-6 text-xs font-semibold text-slate-600 rounded-lg shadow-sm">
         <span>LOGIN ID: <span className="text-brand-700">ADM-001</span></span>
         <span>NAME: <span className="text-brand-700">JOHN DOE</span></span>
         <button className="text-brand-600 hover:underline flex items-center gap-1"><Clock className="w-3 h-3"/> ACTIVITY LOG</button>
       </div>
 
-      <div className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full flex flex-col gap-6">
-        <h2 className="text-2xl font-bold text-brand-900 mb-2">Create New Course</h2>
+      <div className="w-full flex flex-col gap-6">
+        <h2 className="text-2xl font-bold text-brand-900 mb-2">Create / Edit Course</h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
@@ -66,10 +122,9 @@ const CourseCreator: React.FC = () => {
                 <label className="text-xs font-semibold text-slate-600">COURSE TILE</label>
                 <div className="relative">
                   <BookOpen className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input type="text" className="w-full border border-slate-300 rounded p-2 pl-9 text-sm focus:ring-1 focus:ring-brand-500" placeholder="e.g. SAP Training" />
+                  <input type="text" value={courseName} onChange={(e) => setCourseName(e.target.value)} className="w-full border border-slate-300 rounded p-2 pl-9 text-sm focus:ring-1 focus:ring-brand-500" placeholder="e.g. SAP Training" />
                 </div>
               </div>
-              <button className="bg-brand-100 text-brand-700 p-2 rounded hover:bg-brand-200 border border-brand-200"><Plus className="w-5 h-5"/></button>
             </div>
 
             <div className="flex items-end gap-2">
@@ -77,25 +132,23 @@ const CourseCreator: React.FC = () => {
                 <label className="text-xs font-semibold text-slate-600">CHAPTERS / MODUALS</label>
                 <div className="relative">
                   <BookMarked className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input type="number" className="w-full border border-slate-300 rounded p-2 pl-9 text-sm focus:ring-1 focus:ring-brand-500" placeholder="e.g. 12" />
+                  <input type="number" value={chapters} onChange={(e) => setChapters(e.target.value)} className="w-full border border-slate-300 rounded p-2 pl-9 text-sm focus:ring-1 focus:ring-brand-500" placeholder="e.g. 12" />
                 </div>
               </div>
-              <button className="bg-brand-100 text-brand-700 p-2 rounded hover:bg-brand-200 border border-brand-200"><Plus className="w-5 h-5"/></button>
             </div>
 
             <div className="flex items-end gap-2">
               <div className="flex-1 flex flex-col gap-1">
                 <label className="text-xs font-semibold text-slate-600">DURATION</label>
                 <div className="flex gap-2">
-                  <input type="number" className="w-20 border border-slate-300 rounded p-2 text-sm focus:ring-1 focus:ring-brand-500" placeholder="12" />
-                  <select className="flex-1 border border-slate-300 rounded p-2 text-sm bg-slate-50 focus:ring-1 focus:ring-brand-500">
-                    <option>Weeks</option>
-                    <option>Months</option>
-                    <option>Hours</option>
+                  <input type="number" value={durationVal} onChange={(e) => setDurationVal(e.target.value)} className="w-20 border border-slate-300 rounded p-2 text-sm focus:ring-1 focus:ring-brand-500" placeholder="12" />
+                  <select value={durationType} onChange={(e) => setDurationType(e.target.value)} className="flex-1 border border-slate-300 rounded p-2 text-sm bg-slate-50 focus:ring-1 focus:ring-brand-500">
+                    <option value="Weeks">Weeks</option>
+                    <option value="Months">Months</option>
+                    <option value="Hours">Hours</option>
                   </select>
                 </div>
               </div>
-              <button className="bg-brand-100 text-brand-700 p-2 rounded hover:bg-brand-200 border border-brand-200"><Plus className="w-5 h-5"/></button>
             </div>
 
             <div className="flex items-end gap-2 pt-2 border-t border-slate-100">
@@ -103,10 +156,11 @@ const CourseCreator: React.FC = () => {
                 <label className="text-xs font-semibold text-slate-600">STAFF INFO</label>
                 <div className="relative">
                   <Users className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <select className="w-full border border-slate-300 rounded p-2 pl-9 text-sm bg-slate-50 focus:ring-1 focus:ring-brand-500">
-                    <option>Select Staff</option>
-                    <option>Nadeem - ID 091</option>
-                    <option>Jane - ID 092</option>
+                  <select value={staff} onChange={(e) => setStaff(e.target.value)} className="w-full border border-slate-300 rounded p-2 pl-9 text-sm bg-slate-50 focus:ring-1 focus:ring-brand-500">
+                    <option value="">Select Staff</option>
+                    <option value="Nadeem - ID 091">Nadeem - ID 091</option>
+                    <option value="Jane - ID 092">Jane - ID 092</option>
+                    <option value="AI Bot">AI Bot</option>
                   </select>
                 </div>
               </div>
@@ -116,28 +170,23 @@ const CourseCreator: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
-              <label className="text-xs font-semibold text-slate-600">TEACHING METHOD (From Services & Batches)</label>
+              <label className="text-xs font-semibold text-slate-600">TEACHING METHOD (Linked to Services & Batches)</label>
               
               <div className="space-y-2">
-                <div className="flex items-center gap-2 p-2 bg-slate-50 rounded border border-slate-200 text-sm">
-                  <span className="font-semibold w-1/3">Live Class</span>
-                  <span className="text-slate-500 w-1/3">Batch Group 1</span>
-                  <button className="text-xs text-brand-600 font-bold ml-auto flex items-center gap-1"><Plus className="w-3 h-3"/> ADD</button>
-                </div>
-                <div className="flex items-center gap-2 p-2 bg-slate-50 rounded border border-slate-200 text-sm">
-                  <span className="font-semibold w-1/3">Online Class</span>
-                  <span className="text-slate-500 w-1/3">Batch Group 2</span>
-                  <button className="text-xs text-brand-600 font-bold ml-auto flex items-center gap-1"><Plus className="w-3 h-3"/> ADD</button>
-                </div>
-                <div className="flex items-center gap-2 p-2 bg-slate-50 rounded border border-slate-200 text-sm">
-                  <span className="font-semibold w-1/3">Live Camp Class</span>
-                  <span className="text-slate-500 w-1/3">Batch Group 1</span>
-                  <button className="text-xs text-brand-600 font-bold ml-auto flex items-center gap-1"><Plus className="w-3 h-3"/> ADD</button>
-                </div>
+                 <select 
+                   value={selectedServiceId} 
+                   onChange={(e) => setSelectedServiceId(e.target.value)} 
+                   className="w-full border border-brand-300 rounded p-2 text-sm bg-brand-50 focus:ring-1 focus:ring-brand-500"
+                 >
+                   <option value="">-- Select Pre-Configured Service Package --</option>
+                   {availableServices.map(service => (
+                     <option key={service.id} value={service.id}>
+                       {service.name} [{service.method}] - {service.batch}
+                     </option>
+                   ))}
+                 </select>
               </div>
-              <button className="mt-2 text-xs text-brand-700 bg-brand-50 border border-brand-200 p-2 rounded flex items-center justify-center font-bold hover:bg-brand-100">
-                ADD- SERVICE PACKAGE
-              </button>
+              <p className="text-[10px] text-slate-500 italic mt-1">*Select a service package to map the teaching method and timeslot.</p>
             </div>
             
           </div>
@@ -178,7 +227,7 @@ const CourseCreator: React.FC = () => {
               <div className="flex gap-4 items-center">
                 <div className="relative flex-1">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold">$</span>
-                  <input type="text" className="w-full border border-slate-300 rounded p-3 pl-8 font-bold text-lg text-brand-900 focus:ring-1 focus:ring-brand-500" placeholder="0.00" />
+                  <input type="text" value={fee} onChange={(e) => setFee(e.target.value)} className="w-full border border-slate-300 rounded p-3 pl-8 font-bold text-lg text-brand-900 focus:ring-1 focus:ring-brand-500" placeholder="0.00" />
                 </div>
                 <div className="text-xs text-slate-500">
                   Market Avg: $450<br/>
@@ -199,10 +248,10 @@ const CourseCreator: React.FC = () => {
                 <Send className="w-4 h-4"/> SEND TO UPDATE
               </button>
               <div className="col-span-2 flex gap-2 justify-center mt-2">
-                <button className="flex-1 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded hover:bg-slate-200 flex items-center justify-center gap-1"><Edit className="w-3 h-3"/> EDIT</button>
-                <button className="flex-1 py-2 bg-red-50 text-red-600 text-xs font-bold rounded hover:bg-red-100 border border-red-200 flex items-center justify-center gap-1"><Trash2 className="w-3 h-3"/> DELETE</button>
-                <button className="flex-1 py-2 bg-brand-50 text-brand-700 text-xs font-bold rounded hover:bg-brand-100 border border-brand-200 flex items-center justify-center gap-1"><RefreshCw className="w-3 h-3"/> UPDATE</button>
-                <button className="flex-1 py-2 bg-brand-600 text-white text-xs font-bold rounded hover:bg-brand-700 shadow flex items-center justify-center gap-1"><Save className="w-3 h-3"/> SAVE</button>
+                <button onClick={handleReset} className="flex-1 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded hover:bg-slate-200 flex items-center justify-center gap-1"><Edit className="w-3 h-3"/> RESET</button>
+                <button onClick={handleDelete} disabled={!selectedCourse} className="flex-1 py-2 bg-red-50 text-red-600 text-xs font-bold rounded hover:bg-red-100 border border-red-200 flex items-center justify-center gap-1 disabled:opacity-50"><Trash2 className="w-3 h-3"/> DELETE</button>
+                <button onClick={handleSave} className="flex-1 py-2 bg-brand-50 text-brand-700 text-xs font-bold rounded hover:bg-brand-100 border border-brand-200 flex items-center justify-center gap-1"><RefreshCw className="w-3 h-3"/> UPDATE</button>
+                <button onClick={handleSave} className="flex-1 py-2 bg-brand-600 text-white text-xs font-bold rounded hover:bg-brand-700 shadow flex items-center justify-center gap-1"><Save className="w-3 h-3"/> SAVE</button>
               </div>
             </div>
 
@@ -211,24 +260,24 @@ const CourseCreator: React.FC = () => {
 
         {/* Course List Table (Bottom) */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 overflow-hidden mt-2">
-          <h2 className="text-lg font-bold text-slate-800 mb-4">List of Courses</h2>
+          <h2 className="text-lg font-bold text-slate-800 mb-4">List of Courses (Click to View/Edit)</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
                 <tr>
-                  <th className="px-4 py-3 rounded-tl-lg">List of Courses</th>
+                  <th className="px-4 py-3 rounded-tl-lg">Course Name</th>
                   <th className="px-4 py-3">Staff</th>
                   <th className="px-4 py-3">Chapter</th>
                   <th className="px-4 py-3">Duration</th>
-                  <th className="px-4 py-3">Methods</th>
+                  <th className="px-4 py-3">Methods & Batch</th>
                   <th className="px-4 py-3">Materials</th>
                   <th className="px-4 py-3">Course Fee</th>
-                  <th className="px-4 py-3 rounded-tr-lg">Number of Students</th>
+                  <th className="px-4 py-3 rounded-tr-lg">Students</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {courseList.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50">
+                  <tr key={item.id} onClick={() => handleRowClick(item)} className={`cursor-pointer hover:bg-slate-50 transition-colors ${selectedCourse?.id === item.id ? 'bg-brand-50 ring-1 ring-brand-200' : ''}`}>
                     <td className="px-4 py-3 font-semibold text-brand-700">{item.name}</td>
                     <td className="px-4 py-3 text-slate-600">{item.staff}</td>
                     <td className="px-4 py-3 text-slate-600">{item.chapter}</td>
