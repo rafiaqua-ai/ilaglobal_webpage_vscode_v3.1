@@ -62,6 +62,26 @@ export interface AttendanceLog {
   date: string;
 }
 
+export interface ApprovalRequest {
+  id: string;
+  type: 'New Staff' | 'New Course' | 'Data Edit' | 'Deletion' | 'General';
+  description: string;
+  requestedBy: string;
+  department: string;
+  date: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+}
+
+export interface UpdateLog {
+  id: string;
+  action: string;
+  details: string;
+  user: string;
+  department: string;
+  timestamp: string;
+  category: 'System' | 'Content' | 'Personnel' | 'Data';
+}
+
 // Initial Seed Data
 const SEED_INQUIRIES: Inquiry[] = [
   {
@@ -107,6 +127,51 @@ const SEED_ATTENDANCE: AttendanceLog[] = [
 ];
 
 // DB Retrieval & Save Functions
+export const getGlobalApprovals = (): ApprovalRequest[] => {
+  const data = localStorage.getItem('ilas_global_approvals');
+  return data ? JSON.parse(data) : [];
+};
+
+export const addGlobalApproval = (approval: Omit<ApprovalRequest, 'id' | 'status' | 'date'>) => {
+  const approvals = getGlobalApprovals();
+  const newApproval: ApprovalRequest = {
+    ...approval,
+    id: `REQ-${Math.floor(1000 + Math.random() * 9000)}`,
+    status: 'Pending',
+    date: new Date().toLocaleDateString()
+  };
+  const updated = [newApproval, ...approvals];
+  localStorage.setItem('ilas_global_approvals', JSON.stringify(updated));
+  window.dispatchEvent(new CustomEvent('ilas-approvals-changed'));
+  return newApproval;
+};
+
+export const updateGlobalApproval = (id: string, status: 'Approved' | 'Rejected') => {
+  const approvals = getGlobalApprovals();
+  const updated = approvals.map(a => a.id === id ? { ...a, status } : a);
+  localStorage.setItem('ilas_global_approvals', JSON.stringify(updated));
+  window.dispatchEvent(new CustomEvent('ilas-approvals-changed'));
+  return updated;
+};
+
+export const getGlobalUpdates = (): UpdateLog[] => {
+  const data = localStorage.getItem('ilas_global_updates');
+  return data ? JSON.parse(data) : [];
+};
+
+export const addGlobalUpdate = (update: Omit<UpdateLog, 'id' | 'timestamp'>) => {
+  const updates = getGlobalUpdates();
+  const newUpdate: UpdateLog = {
+    ...update,
+    id: `UPD-${Math.floor(1000 + Math.random() * 9000)}`,
+    timestamp: new Date().toLocaleString()
+  };
+  const updated = [newUpdate, ...updates];
+  localStorage.setItem('ilas_global_updates', JSON.stringify(updated));
+  window.dispatchEvent(new CustomEvent('ilas-updates-changed'));
+  return newUpdate;
+};
+
 export const getInquiries = (): Inquiry[] => {
   const data = localStorage.getItem('ilas_inquiries');
   if (!data) {

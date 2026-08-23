@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Plus, CheckSquare, Calendar, Send, Inbox, RefreshCw, Trash2, LayoutDashboard } from 'lucide-react';
 
+import DepartmentApprovalsTab from './DepartmentApprovalsTab';
+import DepartmentUpdatesTab from './DepartmentUpdatesTab';
+
 export default function ExecutiveOverviewHub() {
   const [activeMenu, setActiveMenu] = useState('dashboard');
 
@@ -59,7 +62,7 @@ export default function ExecutiveOverviewHub() {
         </button>
 
         <div className="space-y-1 pt-2">
-          {['Global Strategy', 'Exhibitions & Expos', 'Marketing & Funnels', 'Board Governance', 'PR & Media', 'Internal Audit', 'Documents & Licenses'].map((menu, idx) => {
+          {['Approvals', 'Updates', 'Global Strategy', 'Exhibitions & Expos', 'Marketing & Funnels', 'Board Governance', 'PR & Media', 'Internal Audit', 'Documents & Licenses'].map((menu, idx) => {
             const key = `menu-${idx}`;
             return (
               <button 
@@ -92,6 +95,9 @@ export default function ExecutiveOverviewHub() {
           <h1 className="text-2xl font-black capitalize">{activeMenu === 'dashboard' ? 'CEO Overview & Tasks' : activeMenu}</h1>
           <p className="text-xs text-slate-500 font-semibold mt-1">Manage your tasks, assign them to departments, and schedule your follow-ups.</p>
         </div>
+
+        {activeMenu === 'Approvals' && <DepartmentApprovalsTab departmentName="Executive Hub" />}
+        {activeMenu === 'Updates' && <DepartmentUpdatesTab departmentName="Executive Hub" />}
 
         {/* Task Creator Form */}
         <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">

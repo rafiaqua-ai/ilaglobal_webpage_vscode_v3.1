@@ -5,9 +5,11 @@ import {
 } from 'lucide-react'
 import { 
   getStaffRegistry, saveStaffMember, getAttendanceLogs, logStaffAttendance, 
-  StaffUser, AttendanceLog, syncHRPayrollToFinance 
+  StaffUser, AttendanceLog, syncHRPayrollToFinance, addGlobalApproval, addGlobalUpdate
 } from '../lib/db'
 import { supabase, supabaseAdmin } from '../supabaseClient';
+import DepartmentApprovalsTab from './DepartmentApprovalsTab';
+import DepartmentUpdatesTab from './DepartmentUpdatesTab';
 
 interface HRTask {
   id: string
@@ -36,7 +38,7 @@ interface Candidate {
 }
 
 export default function HRConsultantHub() {
-  const [activePillar, setActivePillar] = useState<'hiring' | 'payroll' | 'ld' | 'hrms' | 'approvals' | 'reports' | 'tasks' | 'visa' | 'performance' | 'welfare' | 'discipline' | 'ai_tech'>('hiring')
+  const [activePillar, setActivePillar] = useState<'hiring' | 'payroll' | 'ld' | 'hrms' | 'approvals' | 'updates' | 'reports' | 'tasks' | 'visa' | 'performance' | 'welfare' | 'discipline' | 'ai_tech'>('hiring')
   
   const [staffList, setStaffList] = useState<StaffUser[]>([])
   const [attendanceLogs, setAttendanceLogs] = useState<AttendanceLog[]>([])
@@ -168,6 +170,15 @@ export default function HRConsultantHub() {
             hrApprovalStatus: 'Verified',
             hrIssuedId: generatedId
           })
+          
+          addGlobalUpdate({
+            action: 'Staff Onboarded',
+            details: `Candidate ${c.name} transitioned to fully verified staff with ID ${generatedId}.`,
+            user: 'HR Manager',
+            department: 'HR Hub',
+            category: 'Personnel'
+          })
+
           alert(`Staff ID (${generatedId}) generated! Staff member added to directory.`)
           return { ...c, stage: 'Completed', status: 'Approved' }
         }
@@ -238,6 +249,22 @@ export default function HRConsultantHub() {
       hrApprovalStatus: 'Verified',
       hrIssuedId: generatedId
     })
+
+    addGlobalApproval({
+      type: 'New Staff',
+      description: `Manual HR registration for ${newName.trim()}`,
+      requestedBy: 'HR Manager',
+      department: 'HR Hub'
+    })
+    
+    addGlobalUpdate({
+      action: 'Internal Staff Added',
+      details: `Staff ${newName.trim()} registered with ID ${generatedId}.`,
+      user: 'HR Manager',
+      department: 'HR Hub',
+      category: 'Personnel'
+    })
+
     setNewName(''); setNewEmail(''); setNewPhone('')
     alert(`Staff ${newName} registered successfully with HR ID: ${generatedId}!`)
   }
@@ -338,6 +365,7 @@ export default function HRConsultantHub() {
           { id: 'ld', label: 'L&D Training', icon: GraduationCap },
           { id: 'hrms', label: 'Internal HRM & Staff', icon: Users },
           { id: 'approvals', label: 'Staff Approvals', icon: CheckCircle2 },
+          { id: 'updates', label: 'Updates', icon: Users },
           { id: 'reports', label: 'HR & Audit Reports', icon: FileText },
           { id: 'tasks', label: 'Task Delegation', icon: UserCheck },
           { id: 'visa', label: 'Global Mobility', icon: Plane },
@@ -596,59 +624,69 @@ export default function HRConsultantHub() {
       {/* 5. HR APPROVALS (NEW DEDICATED TAB) */}
       {activePillar === 'approvals' && (
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-          <div className="flex justify-between items-center border-b pb-4">
-            <h3 className="font-black text-slate-900 flex items-center gap-2 text-sm">
-              <CheckCircle2 className="w-5 h-5 text-indigo-600" /> Pending Staff Approvals & Activation Requests
-            </h3>
-          </div>
+          <DepartmentApprovalsTab departmentName="HR Hub" />
 
-          <div>
-            <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider mb-2">Activation Requests / Pending Approvals</h4>
-            <div className="space-y-2">
-              {staffList.filter(st => st.hrApprovalStatus === 'Pending HR Approval').length === 0 && (
-                <p className="text-xs text-slate-500 italic p-3 bg-slate-50 rounded-xl border border-dashed">No pending approvals in queue.</p>
-              )}
-              {staffList.filter(st => st.hrApprovalStatus === 'Pending HR Approval').map(st => (
-                <div key={st.id} className="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex justify-between items-center text-xs">
-                  <div>
-                    <div className="font-black text-amber-900">{st.name} <span className="text-[10px] text-amber-700 font-mono">(Temp ID: {st.id})</span></div>
-                    <div className="text-amber-800">{st.email} • <span className="font-bold">{st.department}</span></div>
-                    <div className="text-[10px] text-amber-600 mt-1">Temp Access Expires: {st.temporaryAccessExpiry}</div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => handleApproveSubordinate(st.id)} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl cursor-pointer">
-                      Approve & Activate
-                    </button>
-                    <button onClick={() => handleRejectSubordinate(st.id)} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl cursor-pointer">
-                      Reject
-                    </button>
-                  </div>
-                </div>
-              ))}
+          <div className="pt-6 border-t border-slate-100">
+            <div className="flex justify-between items-center border-b pb-4">
+              <h3 className="font-black text-slate-900 flex items-center gap-2 text-sm">
+                <CheckCircle2 className="w-5 h-5 text-indigo-600" /> Pending Staff Approvals & Activation Requests
+              </h3>
             </div>
-          </div>
 
-          {staffList.some(st => (st.hrApprovalStatus as any) === 'Blocked (Timeout)') && (
             <div>
-              <h4 className="font-bold text-rose-700 text-xs uppercase tracking-wider mb-2">Blocked / Suspended (Timeout)</h4>
+              <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider mb-2 mt-4">Activation Requests / Pending Approvals</h4>
               <div className="space-y-2">
-                {staffList.filter(st => (st.hrApprovalStatus as any) === 'Blocked (Timeout)').map(st => (
-                  <div key={st.id} className="p-3 bg-rose-50 border border-rose-200 rounded-2xl flex justify-between items-center text-xs">
+                {staffList.filter(st => st.hrApprovalStatus === 'Pending HR Approval').length === 0 && (
+                  <p className="text-xs text-slate-500 italic p-3 bg-slate-50 rounded-xl border border-dashed">No pending approvals in queue.</p>
+                )}
+                {staffList.filter(st => st.hrApprovalStatus === 'Pending HR Approval').map(st => (
+                  <div key={st.id} className="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex justify-between items-center text-xs">
                     <div>
-                      <div className="font-black text-rose-900">{st.name} <span className="text-[10px] text-rose-700 font-mono">({st.id})</span></div>
-                      <div className="text-rose-800">{st.email} • <span className="font-bold">{st.department}</span></div>
-                      <div className="text-[10px] text-rose-600 mt-1 font-bold">Auto-Blocked: 48-Hour Timer Expired</div>
+                      <div className="font-black text-amber-900">{st.name} <span className="text-[10px] text-amber-700 font-mono">(Temp ID: {st.id})</span></div>
+                      <div className="text-amber-800">{st.email} • <span className="font-bold">{st.department}</span></div>
+                      <div className="text-[10px] text-amber-600 mt-1">Temp Access Expires: {st.temporaryAccessExpiry}</div>
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => handleApproveSubordinate(st.id)} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl cursor-pointer">
-                        Re-activate / Approve
+                        Approve & Activate
+                      </button>
+                      <button onClick={() => handleRejectSubordinate(st.id)} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl cursor-pointer">
+                        Reject
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-          )}
+
+            {staffList.some(st => (st.hrApprovalStatus as any) === 'Blocked (Timeout)') && (
+              <div>
+                <h4 className="font-bold text-rose-700 text-xs uppercase tracking-wider mb-2 mt-4">Blocked / Suspended (Timeout)</h4>
+                <div className="space-y-2">
+                  {staffList.filter(st => (st.hrApprovalStatus as any) === 'Blocked (Timeout)').map(st => (
+                    <div key={st.id} className="p-3 bg-rose-50 border border-rose-200 rounded-2xl flex justify-between items-center text-xs">
+                      <div>
+                        <div className="font-black text-rose-900">{st.name} <span className="text-[10px] text-rose-700 font-mono">({st.id})</span></div>
+                        <div className="text-rose-800">{st.email} • <span className="font-bold">{st.department}</span></div>
+                        <div className="text-[10px] text-rose-600 mt-1 font-bold">Auto-Blocked: 48-Hour Timer Expired</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleApproveSubordinate(st.id)} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl cursor-pointer">
+                          Re-activate / Approve
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activePillar === 'updates' && (
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+          <DepartmentUpdatesTab departmentName="HR Hub" />
         </div>
       )}
 
@@ -847,3 +885,6 @@ export default function HRConsultantHub() {
     </div>
   )
 }
+
+
+

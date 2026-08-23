@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BookOpen, DollarSign, BrainCircuit, Upload, Plus, Trash2, Edit2, Users, UserPlus, Image as ImageIcon, Video, FileText, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { getPendingStudentInquiries, approveStudentPaymentAndUnlock, Inquiry, getStaffRegistry, saveStaffMember, StaffUser } from '../lib/db';
+import { getPendingStudentInquiries, approveStudentPaymentAndUnlock, Inquiry, getStaffRegistry, saveStaffMember, StaffUser, addGlobalApproval, addGlobalUpdate } from '../lib/db';
 
 interface Course {
   id: number;
@@ -12,8 +12,11 @@ interface Course {
   status: 'Active' | 'Pending Edit Approval' | 'Pending Deletion';
 }
 
+import DepartmentApprovalsTab from './DepartmentApprovalsTab';
+import DepartmentUpdatesTab from './DepartmentUpdatesTab';
+
 export default function EducationHub() {
-  const [activeTab, setActiveTab] = useState<'courses' | 'enrollment' | 'library' | 'delegation' | 'staff'>('courses');
+  const [activeTab, setActiveTab] = useState<'courses' | 'enrollment' | 'library' | 'delegation' | 'staff' | 'approvals' | 'updates'>('courses');
   
   // 1. Fully Functional Course Management State
   const [courses, setCourses] = useState<Course[]>(() => {
@@ -67,6 +70,22 @@ export default function EducationHub() {
       status: 'Active'
     };
     setCourses([...courses, newEntry]);
+    
+    addGlobalApproval({
+      type: 'New Course',
+      description: `New course created: ${newCourseTitle}`,
+      requestedBy: 'Education Staff',
+      department: 'Education'
+    });
+
+    addGlobalUpdate({
+      action: 'Course Created',
+      details: `Course ${newCourseTitle} added with ${newCourseModules} modules.`,
+      user: 'Education Staff',
+      department: 'Education',
+      category: 'Data'
+    });
+
     setNewCourseTitle('');
     setNewCourseModules(3);
     setHasChapters(false);
@@ -78,12 +97,29 @@ export default function EducationHub() {
   const requestDeleteCourse = (id: number) => {
     if (confirm('Deletion requires Department Head sign-off. Request deletion approval?')) {
       setCourses(courses.map(c => c.id === id ? { ...c, status: 'Pending Deletion' } : c));
+      
+      const course = courses.find(c => c.id === id);
+      addGlobalApproval({
+        type: 'Deletion',
+        description: `Request to delete course: ${course?.title}`,
+        requestedBy: 'Education Staff',
+        department: 'Education'
+      });
+
       alert('Deletion request sent to Department Head.');
     }
   };
 
   const handleUpdateCourseRequest = (id: number) => {
     setCourses(courses.map(c => c.id === id ? { ...c, title: editTitle, modules: editModules, status: 'Pending Edit Approval' } : c));
+    
+    addGlobalApproval({
+      type: 'Data Edit',
+      description: `Request to edit course: ${editTitle}`,
+      requestedBy: 'Education Staff',
+      department: 'Education'
+    });
+
     setEditingId(null);
     setEditTitle('');
     setEditModules(0);
@@ -154,6 +190,21 @@ export default function EducationHub() {
       status: 'Active'
     });
 
+    addGlobalApproval({
+      type: 'New Staff',
+      description: `New subordinate added: ${newStaff.name}`,
+      requestedBy: 'Education Head',
+      department: 'HR Hub'
+    });
+
+    addGlobalUpdate({
+      action: 'Staff Synced',
+      details: `New subordinate details synced with HR central registry.`,
+      user: 'Education Head',
+      department: 'Education',
+      category: 'Personnel'
+    });
+
     setNewStaff({ name: '', email: '', phone: '', password: '' });
     setShowAddStaffModal(false);
     alert('Subordinate staff added successfully! They are now synced with HR central registry.');
@@ -195,6 +246,8 @@ export default function EducationHub() {
       {/* Navigation */}
       <div className="flex gap-2 border-b pb-2 overflow-x-auto no-scrollbar">
         {[
+          { id: 'approvals', label: 'Approvals' },
+          { id: 'updates', label: 'Updates' },
           { id: 'courses', label: 'Manage Courses' },
           { id: 'enrollment', label: `Payment Approval (${pendingStudents.length})` },
           { id: 'library', label: 'AI Video Library' },
@@ -465,6 +518,18 @@ export default function EducationHub() {
                 Delegate Task 🎯
               </button>
             </form>
+          </div>
+        )}
+
+        {activeTab === 'approvals' && (
+          <div className="space-y-4">
+            <DepartmentApprovalsTab departmentName="Education Hub" />
+          </div>
+        )}
+
+        {activeTab === 'updates' && (
+          <div className="space-y-4">
+            <DepartmentUpdatesTab departmentName="Education Hub" />
           </div>
         )}
 

@@ -51,8 +51,11 @@ interface MarketingMeeting {
   status: 'Scheduled' | 'Completed'
 }
 
+import DepartmentApprovalsTab from './DepartmentApprovalsTab';
+import DepartmentUpdatesTab from './DepartmentUpdatesTab';
+
 export default function MarketingStudioHub() {
-  const [subTab, setSubTab] = useState<'campaigns' | 'leads' | 'field' | 'ai' | 'meetings' | 'seasonal' | 'budget' | 'reports' | 'approvals'>('campaigns')
+  const [subTab, setSubTab] = useState<'campaigns' | 'leads' | 'field' | 'ai' | 'meetings' | 'seasonal' | 'budget' | 'reports' | 'approvals' | 'updates'>('campaigns')
 
   // Multi-Channel Pipelines State
   const [pipelines] = useState<FunnelPipeline[]>([
@@ -180,7 +183,8 @@ export default function MarketingStudioHub() {
     <div className="space-y-6">
       {/* Top sub-tab switcher */}
       <div className="flex border-b border-slate-200 gap-1 overflow-x-auto no-scrollbar py-1">
-        <button onClick={() => setSubTab('approvals')} className={`px-4 py-2 text-xs font-black border-b-2 whitespace-nowrap cursor-pointer ${subTab === 'approvals' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>✅ Promo Approvals</button>
+        <button onClick={() => setSubTab('approvals')} className={`px-4 py-2 text-xs font-black border-b-2 whitespace-nowrap cursor-pointer ${subTab === 'approvals' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>✅ Approvals</button>
+        <button onClick={() => setSubTab('updates')} className={`px-4 py-2 text-xs font-black border-b-2 whitespace-nowrap cursor-pointer ${subTab === 'updates' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>📡 Updates</button>
         <button onClick={() => setSubTab('campaigns')} className={`px-4 py-2 text-xs font-black border-b-2 whitespace-nowrap cursor-pointer ${subTab === 'campaigns' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>🎯 Campaigns</button>
         <button onClick={() => setSubTab('leads')} className={`px-4 py-2 text-xs font-black border-b-2 whitespace-nowrap cursor-pointer ${subTab === 'leads' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>👥 Lead Funnel</button>
         <button onClick={() => setSubTab('field')} className={`px-4 py-2 text-xs font-black border-b-2 whitespace-nowrap cursor-pointer ${subTab === 'field' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>📍 Field Visits</button>
@@ -326,58 +330,69 @@ export default function MarketingStudioHub() {
 
       {/* 9. APPROVALS */}
       {subTab === 'approvals' && (
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-4 shadow-sm">
-          <div className="flex justify-between items-center border-b pb-4">
-            <h3 className="font-black text-slate-900 flex items-center gap-2 text-sm">
-              <CheckCircle2 className="w-5 h-5 text-indigo-600" /> Franchise & Departmental Promo Approvals
-            </h3>
-          </div>
-          <p className="text-xs text-slate-500 mb-4">
-            Multi-level Approval Hierarchy: All uploaded brochures, videos, or promotional text from franchises and internal departments are routed here. 
-            Final publishing strictly requires sign-off from the Marketing Head. Once approved, the content is directly pushed to the franchise's registered WhatsApp/Mobile.
-          </p>
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-6">
+          <DepartmentApprovalsTab departmentName="Marketing Studio" />
+          
+          <div className="pt-6 border-t border-slate-100">
+            <div className="flex justify-between items-center border-b pb-4">
+              <h3 className="font-black text-slate-900 flex items-center gap-2 text-sm">
+                <CheckCircle2 className="w-5 h-5 text-indigo-600" /> Franchise & Departmental Promo Approvals
+              </h3>
+            </div>
+            <p className="text-xs text-slate-500 mb-4 mt-4">
+              Multi-level Approval Hierarchy: All uploaded brochures, videos, or promotional text from franchises and internal departments are routed here. 
+              Final publishing strictly requires sign-off from the Marketing Head. Once approved, the content is directly pushed to the franchise's registered WhatsApp/Mobile.
+            </p>
 
-          <div className="space-y-4">
-            {/* Example Pending Item */}
-            <div className="p-4 border border-amber-200 bg-amber-50 rounded-2xl flex flex-col sm:flex-row justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2 py-0.5 bg-amber-200 text-amber-800 rounded font-bold text-[10px]">Pending Approval</span>
-                  <span className="text-xs font-bold text-slate-700">Kerala Branch - Study Abroad Dept</span>
+            <div className="space-y-4">
+              {/* Example Pending Item */}
+              <div className="p-4 border border-amber-200 bg-amber-50 rounded-2xl flex flex-col sm:flex-row justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 bg-amber-200 text-amber-800 rounded font-bold text-[10px]">Pending Approval</span>
+                    <span className="text-xs font-bold text-slate-700">Kerala Branch - Study Abroad Dept</span>
+                  </div>
+                  <p className="text-xs font-medium text-slate-800 whitespace-pre-wrap">
+                    "🚀 Special Update! Join our fast-track admission process for German Universities this August intake..."
+                  </p>
+                  <div className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
+                    <UploadCloud className="w-3 h-3" /> Includes 1 Attached Brochure
+                  </div>
                 </div>
-                <p className="text-xs font-medium text-slate-800 whitespace-pre-wrap">
-                  "🚀 Special Update! Join our fast-track admission process for German Universities this August intake..."
-                </p>
-                <div className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
-                  <UploadCloud className="w-3 h-3" /> Includes 1 Attached Brochure
+                <div className="flex sm:flex-col gap-2 min-w-[140px]">
+                  <button className="flex-1 px-3 py-2 bg-indigo-600 text-white font-bold rounded-xl text-xs cursor-pointer text-center">
+                    Approve & Route to WhatsApp
+                  </button>
+                  <button className="flex-1 px-3 py-2 bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer text-center">
+                    Reject / Revise
+                  </button>
                 </div>
               </div>
-              <div className="flex sm:flex-col gap-2 min-w-[140px]">
-                <button className="flex-1 px-3 py-2 bg-indigo-600 text-white font-bold rounded-xl text-xs cursor-pointer text-center">
-                  Approve & Route to WhatsApp
-                </button>
-                <button className="flex-1 px-3 py-2 bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer text-center">
-                  Reject / Revise
-                </button>
-              </div>
-            </div>
-            
-            {/* Example Approved Item */}
-            <div className="p-4 border border-emerald-200 bg-emerald-50/50 rounded-2xl flex flex-col sm:flex-row justify-between gap-4 opacity-70">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2 py-0.5 bg-emerald-200 text-emerald-800 rounded font-bold text-[10px]">Approved & Routed</span>
-                  <span className="text-xs font-bold text-slate-700">Delhi Franchise - General Manager</span>
-                </div>
-                <p className="text-xs font-medium text-slate-800 whitespace-pre-wrap">
-                  "Start your dual-study Ausbildung program today..."
-                </p>
-                <div className="text-[10px] text-emerald-600 mt-2 font-bold">
-                  Sent to Franchise WhatsApp (+91 98765 43210) on {new Date().toLocaleDateString()}
+              
+              {/* Example Approved Item */}
+              <div className="p-4 border border-emerald-200 bg-emerald-50/50 rounded-2xl flex flex-col sm:flex-row justify-between gap-4 opacity-70">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 bg-emerald-200 text-emerald-800 rounded font-bold text-[10px]">Approved & Routed</span>
+                    <span className="text-xs font-bold text-slate-700">Delhi Franchise - General Manager</span>
+                  </div>
+                  <p className="text-xs font-medium text-slate-800 whitespace-pre-wrap">
+                    "Start your dual-study Ausbildung program today..."
+                  </p>
+                  <div className="text-[10px] text-emerald-600 mt-2 font-bold">
+                    Sent to Franchise WhatsApp (+91 98765 43210) on {new Date().toLocaleDateString()}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 10. UPDATES */}
+      {subTab === 'updates' && (
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+          <DepartmentUpdatesTab departmentName="Marketing Studio" />
         </div>
       )}
     </div>

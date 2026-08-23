@@ -15,6 +15,8 @@ import ITAdminConsole from './ITAdminConsole';
 import EducationHub from './EducationHub'; // Integrated Education Hub
 import ITMarketingAnalyticsDashboard from './ITMarketingAnalyticsDashboard';
 import ContentCreationTool from './ContentCreationTool';
+import DepartmentApprovalsTab from './DepartmentApprovalsTab';
+import DepartmentUpdatesTab from './DepartmentUpdatesTab';
 
 interface VisitorStatType {
   totalVisitors: number;
@@ -230,6 +232,9 @@ export default function AdminPortal() {
               <button onClick={() => setActiveTab('marketing')} className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'marketing' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
                 <Megaphone className="w-4 h-4" /> Marketing Studio
               </button>
+              <button onClick={() => setActiveTab('marketing_analytics')} className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'marketing_analytics' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
+                <BarChart2 className="w-4 h-4" /> Marketing Analyst
+              </button>
             </div>
           </div>
 
@@ -267,9 +272,6 @@ export default function AdminPortal() {
               </button>
               <button onClick={() => setActiveTab('it_admin')} className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'it_admin' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
                 <ShieldCheck className="w-4 h-4" /> IT & Security
-              </button>
-              <button onClick={() => setActiveTab('marketing_analytics')} className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'marketing_analytics' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
-                <BarChart2 className="w-4 h-4" /> IT & Marketing Analytics
               </button>
               <button onClick={() => setActiveTab('activity')} className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'activity' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
                 <Activity className="w-4 h-4" /> ILA Monitor & Radar
@@ -320,6 +322,8 @@ export default function AdminPortal() {
                   <button onClick={() => setShowAuthModal(true)} className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl cursor-pointer">Configure Auth Gate 🔒</button>
                 </div>
               </div>
+              <DepartmentApprovalsTab departmentName="Super Admin Hub" />
+              <DepartmentUpdatesTab departmentName="Super Admin Hub" />
               <ContentCreationTool departmentName="Super Admin" />
             </div>
           )}
@@ -356,6 +360,8 @@ export default function AdminPortal() {
                 </div>
               </div>
               <ContentCreationTool departmentName="Study Abroad" />
+              <DepartmentApprovalsTab departmentName="Study Abroad" />
+              <DepartmentUpdatesTab departmentName="Study Abroad" />
             </div>
           )}
 
@@ -382,6 +388,8 @@ export default function AdminPortal() {
                 </div>
               </div>
               <ContentCreationTool departmentName="Visa Processing" />
+              <DepartmentApprovalsTab departmentName="Visa Processing" />
+              <DepartmentUpdatesTab departmentName="Visa Processing" />
             </div>
           )}
 
@@ -390,6 +398,8 @@ export default function AdminPortal() {
               <h2 className="text-xl font-black text-slate-900">Work While You Study (Ausbildung) Operations</h2>
               <p className="text-xs text-slate-500">Manage candidate dual-system contracts combining training with salary stipends.</p>
               <ContentCreationTool departmentName="Work While You Study" />
+              <DepartmentApprovalsTab departmentName="Work While You Study" />
+              <DepartmentUpdatesTab departmentName="Work While You Study" />
             </div>
           )}
 
@@ -398,6 +408,8 @@ export default function AdminPortal() {
               <h2 className="text-xl font-black text-slate-900">Jobs & Career Search Engine</h2>
               <p className="text-xs text-slate-500">Connect candidates directly with German hospital groups and tech firms.</p>
               <ContentCreationTool departmentName="Jobs & Careers" />
+              <DepartmentApprovalsTab departmentName="Jobs & Career" />
+              <DepartmentUpdatesTab departmentName="Jobs & Career" />
             </div>
           )}
 
@@ -406,6 +418,8 @@ export default function AdminPortal() {
               <h2 className="text-xl font-black text-slate-900">Reward Plan & Commission Hub</h2>
               <p className="text-xs text-slate-500">Configure reward points, franchise referral commissions, and student milestone bonuses.</p>
               <ContentCreationTool departmentName="Rewards & Commissions" />
+              <DepartmentApprovalsTab departmentName="Rewards" />
+              <DepartmentUpdatesTab departmentName="Rewards" />
             </div>
           )}
 
@@ -427,11 +441,11 @@ export default function AdminPortal() {
             </div>
           )}
 
-          {activeTab === 'sales' && <div><div className="text-xs font-bold text-slate-600 mb-4">Sales & POS Hub Management</div><ContentCreationTool departmentName="Sales Hub" /></div>}
-          {activeTab === 'activity' && <><IlasActivityHub /><ContentCreationTool departmentName="ILA Monitor" /></>}
-          {activeTab === 'it_admin' && <><ITAdminConsole /><ContentCreationTool departmentName="IT & Security" /></>}
-          {activeTab === 'marketing_analytics' && <><ITMarketingAnalyticsDashboard /><ContentCreationTool departmentName="Marketing Analytics" /></>}
-          {activeTab === 'settings' && <><SettingsHub /><ContentCreationTool departmentName="Settings" /></>}
+          {activeTab === 'sales' && <div><div className="text-xs font-bold text-slate-600 mb-4">Sales & POS Hub Management</div><ContentCreationTool departmentName="Sales Hub" /><DepartmentApprovalsTab departmentName="Sales" /><DepartmentUpdatesTab departmentName="Sales" /></div>}
+          {activeTab === 'activity' && <><IlasActivityHub /><ContentCreationTool departmentName="ILA Monitor" /><DepartmentUpdatesTab departmentName="ILA Monitor" /></>}
+          {activeTab === 'it_admin' && <><ITAdminConsole /><ContentCreationTool departmentName="IT & Security" /><DepartmentApprovalsTab departmentName="IT" /><DepartmentUpdatesTab departmentName="IT" /></>}
+          {activeTab === 'marketing_analytics' && <><ITMarketingAnalyticsDashboard /><ContentCreationTool departmentName="Marketing Analyst" /><DepartmentApprovalsTab departmentName="Marketing Analyst" /><DepartmentUpdatesTab departmentName="Marketing Analyst" /></>}
+          {activeTab === 'settings' && <><SettingsHub /><ContentCreationTool departmentName="Settings" /><DepartmentUpdatesTab departmentName="Settings" /></>}
 
         </div>
       </div>

@@ -39,8 +39,11 @@ interface FundPool {
   utilizedAmount: number
 }
 
+import DepartmentApprovalsTab from './DepartmentApprovalsTab';
+import DepartmentUpdatesTab from './DepartmentUpdatesTab';
+
 export default function FinanceCommissionHub() {
-  const [subTab, setSubTab] = useState<'ledger' | 'sales' | 'requests' | 'commission' | 'franchise' | 'funds'>('ledger')
+  const [subTab, setSubTab] = useState<'ledger' | 'sales' | 'requests' | 'commission' | 'franchise' | 'funds' | 'approvals' | 'updates'>('ledger')
 
   // Sales/Payment milestones state
   const [salesRecords, setSalesRecords] = useState<any[]>(() => {
@@ -308,6 +311,8 @@ export default function FinanceCommissionHub() {
     <div className="space-y-6">
       {/* Top sub-tab switcher */}
       <div className="flex border-b border-slate-200 gap-1 overflow-x-auto no-scrollbar py-1">
+        <button onClick={() => setSubTab('approvals')} className={`px-4 py-2 text-xs md:text-sm font-black border-b-2 transition-all whitespace-nowrap cursor-pointer ${subTab === 'approvals' ? 'border-brand-600 text-brand-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>✅ Approvals</button>
+        <button onClick={() => setSubTab('updates')} className={`px-4 py-2 text-xs md:text-sm font-black border-b-2 transition-all whitespace-nowrap cursor-pointer ${subTab === 'updates' ? 'border-brand-600 text-brand-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>📡 Updates</button>
         <button
           onClick={() => setSubTab('ledger')}
           className={`px-4 py-2 text-xs md:text-sm font-black border-b-2 transition-all whitespace-nowrap cursor-pointer ${
@@ -952,6 +957,18 @@ export default function FinanceCommissionHub() {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {subTab === 'approvals' && (
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+          <DepartmentApprovalsTab departmentName="Finance Hub" />
+        </div>
+      )}
+
+      {subTab === 'updates' && (
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+          <DepartmentUpdatesTab departmentName="Finance Hub" />
         </div>
       )}
 

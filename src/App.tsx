@@ -106,9 +106,9 @@ function App() {
   const isAdminPage = currentPage === 'admin-portal' || currentPage === 'master-hub'
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden flex flex-col relative">
       {!isAdminPage && <Navbar />}
-      <main>
+      <main className="w-full flex-grow">
         {currentPage === 'master-hub' ? (
           <MasterDepartmentHub departmentName="Education & Training Management Hub" />
         ) : currentPage === 'german-language' ? (

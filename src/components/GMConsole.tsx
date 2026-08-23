@@ -5,8 +5,11 @@ import {
 } from 'lucide-react';
 import { getInquiries, Inquiry } from '../lib/db';
 
+import DepartmentApprovalsTab from './DepartmentApprovalsTab';
+import DepartmentUpdatesTab from './DepartmentUpdatesTab';
+
 export default function GMConsole() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'delegation' | 'departments'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'delegation' | 'departments' | 'approvals' | 'updates'>('overview');
   
   // Real DB Inquiries sync
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
@@ -76,6 +79,24 @@ export default function GMConsole() {
           }`}
         >
           🏢 Department Health
+        </button>
+
+        <button 
+          onClick={() => setActiveTab('approvals')}
+          className={`w-full text-left px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer ${
+            activeTab === 'approvals' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-200/50 text-slate-700'
+          }`}
+        >
+          ✅ Approvals
+        </button>
+
+        <button 
+          onClick={() => setActiveTab('updates')}
+          className={`w-full text-left px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer ${
+            activeTab === 'updates' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-200/50 text-slate-700'
+          }`}
+        >
+          📡 Updates
         </button>
 
         <div className="mt-auto pt-4 border-t border-slate-200">
@@ -220,6 +241,20 @@ export default function GMConsole() {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* TAB 4: APPROVALS */}
+        {activeTab === 'approvals' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <DepartmentApprovalsTab departmentName="GM Console" />
+          </div>
+        )}
+
+        {/* TAB 5: UPDATES */}
+        {activeTab === 'updates' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <DepartmentUpdatesTab departmentName="GM Console" />
           </div>
         )}
 

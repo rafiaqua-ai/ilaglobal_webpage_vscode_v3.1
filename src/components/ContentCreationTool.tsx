@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PenTool, Send, Sparkles, UploadCloud, CheckCircle2, Clock } from 'lucide-react';
+import { addGlobalApproval, addGlobalUpdate } from '../lib/db';
 
 interface ContentCreationToolProps {
   departmentName: string;
@@ -36,17 +37,20 @@ export default function ContentCreationTool({ departmentName }: ContentCreationT
     if (!generatedContent && !mediaUploaded) return;
     setSubmissionStatus('submitted');
     
-    const event = new CustomEvent('ilas-content-submitted', {
-      detail: {
-        department: departmentName,
-        platform,
-        content: generatedContent,
-        hasMedia: mediaUploaded,
-        status: 'Pending Marketing Head Approval',
-        timestamp: new Date().toISOString()
-      }
+    addGlobalApproval({
+      type: 'General',
+      description: `New content submission for ${platform}`,
+      requestedBy: 'Staff Member',
+      department: departmentName
     });
-    window.dispatchEvent(event);
+
+    addGlobalUpdate({
+      action: 'Content Submitted',
+      details: `New promotional campaign drafted and submitted for approval.`,
+      user: 'Staff Member',
+      department: departmentName,
+      category: 'Content'
+    });
   };
 
   return (
