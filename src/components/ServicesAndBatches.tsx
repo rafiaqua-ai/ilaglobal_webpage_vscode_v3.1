@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
-import { Save, Edit, RefreshCw, Trash2, Send, CheckSquare, PlusCircle } from 'lucide-react';
+import { Save, Edit, RefreshCw, Trash2, Send, CheckSquare, PlusCircle, Clock } from 'lucide-react';
 
 type TabType = 'SERVICE' | 'BATCH';
 
 export interface BatchItem {
   id: string;
   name: string;
-  timings: string;
-  staffs: string;
+  timings: string[]; // now an array of timeslots
   starting: string;
-  price: string;
-  candidates: string;
   remarks: string;
 }
 
@@ -18,12 +15,9 @@ export interface ServiceItem {
   id: string;
   name: string;
   methods: string;
-  staffs: string;
   starting: string;
-  price: string;
-  candidates: string;
+  ending: string;
   remarks: string;
-  batchId?: string;
 }
 
 const ServicesAndBatches: React.FC = () => {
@@ -33,22 +27,26 @@ const ServicesAndBatches: React.FC = () => {
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
   const [selectedBatch, setSelectedBatch] = useState<BatchItem | null>(null);
 
+  // Global Mock Store Data (for demo)
   const [batchList, setBatchList] = useState<BatchItem[]>([
-    { id: '1', name: 'Morning Batch 1', timings: '10 AM - 12 PM', staffs: 'John Doe', starting: '2026-10-12', price: '$200', candidates: '15', remarks: 'Full' },
-    { id: '2', name: 'Weekend Batch', timings: '2 PM - 5 PM', staffs: 'Jane Smith', starting: '2026-10-15', price: '$150', candidates: '20', remarks: 'Open' },
+    { id: '1', name: 'Morning Batch 1', timings: ['09:00 - 11:00', '11:00 - 13:00'], starting: '2026-10-12', remarks: 'Full' },
+    { id: '2', name: 'Weekend Batch', timings: ['14:00 - 17:00'], starting: '2026-10-15', remarks: 'Open' },
   ]);
 
   const [serviceList, setServiceList] = useState<ServiceItem[]>([
-    { id: '1', name: 'Live Class', methods: 'Live', staffs: 'John Doe', starting: '2026-10-12', price: '$200', candidates: '15', remarks: 'Good', batchId: '1' },
-    { id: '2', name: 'Online Class', methods: 'Video+AI', staffs: 'AI Bot', starting: '2026-10-15', price: '$150', candidates: '100', remarks: 'Auto', batchId: '2' },
-    { id: '3', name: 'Live Camp Class', methods: 'Camp', staffs: 'Jane Smith', starting: '2026-10-20', price: '$300', candidates: '20', remarks: 'Weekend', batchId: '2' },
+    { id: '1', name: 'Live Class Path', methods: 'Live', starting: '2026-10-12', ending: '2026-12-12', remarks: 'Standard Plan' },
+    { id: '2', name: 'Online FastTrack', methods: 'Video+AI', starting: '2026-10-15', ending: '2026-11-15', remarks: 'Self-paced' },
   ]);
+
+  // Form Temp States for Timeslots
+  const [newTimeSlot, setNewTimeSlot] = useState('');
 
   const handleRowClick = (item: any) => {
     if (activeTab === 'SERVICE') {
       setSelectedService(item as ServiceItem);
     } else {
       setSelectedBatch(item as BatchItem);
+      setNewTimeSlot('');
     }
   };
 
@@ -57,6 +55,7 @@ const ServicesAndBatches: React.FC = () => {
       setSelectedService(null);
     } else {
       setSelectedBatch(null);
+      setNewTimeSlot('');
     }
   };
 
@@ -74,19 +73,37 @@ const ServicesAndBatches: React.FC = () => {
     }
   };
 
+  const handleAddTimeSlot = () => {
+    if (!newTimeSlot) return;
+    setSelectedBatch(prev => {
+       const batch = prev || { id: 'new', name: '', timings: [], starting: '', remarks: '' };
+       return { ...batch, timings: [...batch.timings, newTimeSlot] };
+    });
+    setNewTimeSlot('');
+  };
+
+  const handleRemoveTimeSlot = (index: number) => {
+    setSelectedBatch(prev => {
+       if (!prev) return prev;
+       const newTimings = [...prev.timings];
+       newTimings.splice(index, 1);
+       return { ...prev, timings: newTimings };
+    });
+  };
+
   const handleSave = () => {
     if (activeTab === 'SERVICE') {
-       if (!selectedService || !selectedService.name || !selectedService.batchId) {
-         alert("Validation Error: Please provide a name and select a mandatory batch slot.");
+       if (!selectedService || !selectedService.name || !selectedService.methods) {
+         alert("Validation Error: Please provide Name and Method.");
          return;
        }
        if (selectedService.id && selectedService.id !== 'new') {
          setServiceList(prev => prev.map(s => s.id === selectedService.id ? selectedService : s));
-         alert("Service updated and staff assignment linked.");
+         alert("Service updated.");
        } else {
-         const newService = { ...selectedService, id: Math.random().toString(36).substring(2, 9), candidates: '0' };
+         const newService = { ...selectedService, id: Math.random().toString(36).substring(2, 9) };
          setServiceList(prev => [...prev, newService]);
-         alert("New Service saved and staff assignment linked.");
+         alert("New Service appended to directory.");
        }
        setSelectedService(null);
     } else {
@@ -98,9 +115,9 @@ const ServicesAndBatches: React.FC = () => {
          setBatchList(prev => prev.map(b => b.id === selectedBatch.id ? selectedBatch : b));
          alert("Batch updated successfully.");
        } else {
-         const newBatch = { ...selectedBatch, id: Math.random().toString(36).substring(2, 9), candidates: '0' };
+         const newBatch = { ...selectedBatch, id: Math.random().toString(36).substring(2, 9) };
          setBatchList(prev => [...prev, newBatch]);
-         alert("New Batch saved successfully. It is now available for linking.");
+         alert("New Batch appended successfully.");
        }
        setSelectedBatch(null);
     }
@@ -115,132 +132,141 @@ const ServicesAndBatches: React.FC = () => {
           onClick={() => { setActiveTab('SERVICE'); setSelectedService(null); }}
           className={`px-4 py-2 font-bold text-sm transition-colors ${activeTab === 'SERVICE' ? 'text-brand-700 border-b-2 border-brand-700' : 'text-slate-500 hover:text-slate-700'}`}
         >
-          Create New Service
+          Create New Service Path
         </button>
         <button 
-          onClick={() => { setActiveTab('BATCH'); setSelectedBatch(null); }}
+          onClick={() => { setActiveTab('BATCH'); setSelectedBatch(null); setNewTimeSlot(''); }}
           className={`px-4 py-2 font-bold text-sm transition-colors ${activeTab === 'BATCH' ? 'text-brand-700 border-b-2 border-brand-700' : 'text-slate-500 hover:text-slate-700'}`}
         >
-          Create Batch
+          Create Batch Slots
         </button>
       </div>
 
       {/* Form Section */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <h2 className="text-xl font-bold text-brand-900 mb-6 border-b border-slate-100 pb-2">
-          {activeTab === 'SERVICE' ? 'Service / Training Package Details' : 'Batch / Time-Slot Details'}
+          {activeTab === 'SERVICE' ? 'Essential Service Path Config' : 'Batch & Time-Slot Config'}
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-600">
-              {activeTab === 'SERVICE' ? 'Service / Education Path Name' : 'New Batch Name'}
-            </label>
-            <input 
-              type="text" 
-              className="border border-slate-300 rounded p-2 text-sm" 
-              placeholder={activeTab === 'SERVICE' ? 'e.g. Premium IELTS Camp' : 'Batch Name'} 
-              value={activeTab === 'SERVICE' ? (selectedService?.name || '') : (selectedBatch?.name || '')}
-              onChange={(e) => activeTab === 'SERVICE' 
-                ? setSelectedService(prev => prev ? {...prev, name: e.target.value} : { id: 'new', name: e.target.value, methods: '', staffs: '', starting: '', price: '', candidates: '', remarks: '' })
-                : setSelectedBatch(prev => prev ? {...prev, name: e.target.value} : { id: 'new', name: e.target.value, timings: '', staffs: '', starting: '', price: '', candidates: '', remarks: '' })
-              }
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-600">
-              {activeTab === 'SERVICE' ? 'Training Method' : 'Timings (Slots)'}
-            </label>
-            <input 
-              type="text" 
-              className="border border-slate-300 rounded p-2 text-sm" 
-              placeholder={activeTab === 'SERVICE' ? 'e.g. Hybrid, Online' : 'e.g., 10 AM - 12 PM'} 
-              value={activeTab === 'SERVICE' ? (selectedService?.methods || '') : (selectedBatch?.timings || '')}
-              onChange={(e) => activeTab === 'SERVICE' 
-                ? setSelectedService(prev => prev ? {...prev, methods: e.target.value} : { id: 'new', name: '', methods: e.target.value, staffs: '', starting: '', price: '', candidates: '', remarks: '' })
-                : setSelectedBatch(prev => prev ? {...prev, timings: e.target.value} : { id: 'new', name: '', timings: e.target.value, staffs: '', starting: '', price: '', candidates: '', remarks: '' })
-              }
-            />
-          </div>
-
-          {activeTab === 'SERVICE' && (
-             <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-brand-600">Select Batch Slot (Required)</label>
-                <div className="flex gap-2">
-                  <select 
-                    className="flex-1 border border-brand-300 rounded p-2 text-sm bg-brand-50"
-                    value={selectedService?.batchId || ''}
-                    onChange={(e) => setSelectedService(prev => prev ? {...prev, batchId: e.target.value} : { id: 'new', name: '', methods: '', staffs: '', starting: '', price: '', candidates: '', remarks: '', batchId: e.target.value })}
-                  >
-                    <option value="">-- Mandatory: Link Batch --</option>
-                    {batchList.map(b => (
-                      <option key={b.id} value={b.id}>{b.name} ({b.timings})</option>
-                    ))}
-                  </select>
-                  <button onClick={() => { setActiveTab('BATCH'); setSelectedBatch(null); }} className="bg-slate-100 p-2 rounded text-slate-600 hover:bg-slate-200" title="Create New Batch"><PlusCircle className="w-5 h-5"/></button>
-                </div>
-             </div>
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-600">Select Staffs (Tasks Linked)</label>
-            <select 
-              className="border border-slate-300 rounded p-2 text-sm bg-slate-50"
-              value={activeTab === 'SERVICE' ? (selectedService?.staffs || '') : (selectedBatch?.staffs || '')}
-              onChange={(e) => activeTab === 'SERVICE' 
-                ? setSelectedService(prev => prev ? {...prev, staffs: e.target.value} : { id: 'new', name: '', methods: '', staffs: e.target.value, starting: '', price: '', candidates: '', remarks: '' })
-                : setSelectedBatch(prev => prev ? {...prev, staffs: e.target.value} : { id: 'new', name: '', timings: '', staffs: e.target.value, starting: '', price: '', candidates: '', remarks: '' })
-              }
-            >
-              <option value="">None (Allot AI)</option>
-              <option value="John Doe">John Doe (Direct Delegation)</option>
-              <option value="Jane Smith">Jane Smith</option>
-            </select>
-          </div>
+          {/* SERVICE TAB FORM */}
+          {activeTab === 'SERVICE' && (
+            <>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-slate-600">Service / Education Path Name</label>
+                <input 
+                  type="text" className="border border-slate-300 rounded p-2 text-sm" placeholder="e.g. Premium IELTS Path" 
+                  value={selectedService?.name || ''}
+                  onChange={(e) => setSelectedService(prev => prev ? {...prev, name: e.target.value} : { id: 'new', name: e.target.value, methods: '', starting: '', ending: '', remarks: '' })}
+                />
+              </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-600">Starting From</label>
-            <input 
-              type="date" 
-              className="border border-slate-300 rounded p-2 text-sm" 
-              value={activeTab === 'SERVICE' ? (selectedService?.starting || '') : (selectedBatch?.starting || '')}
-              onChange={(e) => activeTab === 'SERVICE' 
-                ? setSelectedService(prev => prev ? {...prev, starting: e.target.value} : { id: 'new', name: '', methods: '', staffs: '', starting: e.target.value, price: '', candidates: '', remarks: '' })
-                : setSelectedBatch(prev => prev ? {...prev, starting: e.target.value} : { id: 'new', name: '', timings: '', staffs: '', starting: e.target.value, price: '', candidates: '', remarks: '' })
-              }
-            />
-          </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-slate-600">Training Method</label>
+                <input 
+                  type="text" className="border border-slate-300 rounded p-2 text-sm" placeholder="e.g. Hybrid, Online" 
+                  value={selectedService?.methods || ''}
+                  onChange={(e) => setSelectedService(prev => prev ? {...prev, methods: e.target.value} : { id: 'new', name: '', methods: e.target.value, starting: '', ending: '', remarks: '' })}
+                />
+              </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-600">Price Config</label>
-            <input 
-              type="text" 
-              className="border border-slate-300 rounded p-2 text-sm" 
-              placeholder="$ 0.00" 
-              value={activeTab === 'SERVICE' ? (selectedService?.price || '') : (selectedBatch?.price || '')}
-              onChange={(e) => activeTab === 'SERVICE' 
-                ? setSelectedService(prev => prev ? {...prev, price: e.target.value} : { id: 'new', name: '', methods: '', staffs: '', starting: '', price: e.target.value, candidates: '', remarks: '' })
-                : setSelectedBatch(prev => prev ? {...prev, price: e.target.value} : { id: 'new', name: '', timings: '', staffs: '', starting: '', price: e.target.value, candidates: '', remarks: '' })
-              }
-            />
-          </div>
+              <div className="flex gap-4">
+                <div className="flex flex-col gap-1 flex-1">
+                  <label className="text-xs font-semibold text-slate-600">Starting From</label>
+                  <input 
+                    type="date" className="border border-slate-300 rounded p-2 text-sm" 
+                    value={selectedService?.starting || ''}
+                    onChange={(e) => setSelectedService(prev => prev ? {...prev, starting: e.target.value} : { id: 'new', name: '', methods: '', starting: e.target.value, ending: '', remarks: '' })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1 flex-1">
+                  <label className="text-xs font-semibold text-slate-600">Ending / Valid Till (Opt)</label>
+                  <input 
+                    type="date" className="border border-slate-300 rounded p-2 text-sm" 
+                    value={selectedService?.ending || ''}
+                    onChange={(e) => setSelectedService(prev => prev ? {...prev, ending: e.target.value} : { id: 'new', name: '', methods: '', starting: '', ending: e.target.value, remarks: '' })}
+                  />
+                </div>
+              </div>
 
-          <div className="flex flex-col gap-1 lg:col-span-3">
-            <label className="text-xs font-semibold text-slate-600">Remarks, Details & Suggestion</label>
-            <input 
-              type="text" 
-              className="border border-slate-300 rounded p-2 text-sm" 
-              placeholder="Full details..." 
-              value={activeTab === 'SERVICE' ? (selectedService?.remarks || '') : (selectedBatch?.remarks || '')}
-              onChange={(e) => activeTab === 'SERVICE' 
-                ? setSelectedService(prev => prev ? {...prev, remarks: e.target.value} : { id: 'new', name: '', methods: '', staffs: '', starting: '', price: '', candidates: '', remarks: e.target.value })
-                : setSelectedBatch(prev => prev ? {...prev, remarks: e.target.value} : { id: 'new', name: '', timings: '', staffs: '', starting: '', price: '', candidates: '', remarks: e.target.value })
-              }
-            />
-          </div>
+              <div className="flex flex-col gap-1 md:col-span-2">
+                <label className="text-xs font-semibold text-slate-600">Remarks & Details</label>
+                <input 
+                  type="text" className="border border-slate-300 rounded p-2 text-sm" placeholder="Full details..." 
+                  value={selectedService?.remarks || ''}
+                  onChange={(e) => setSelectedService(prev => prev ? {...prev, remarks: e.target.value} : { id: 'new', name: '', methods: '', starting: '', ending: '', remarks: e.target.value })}
+                />
+              </div>
+            </>
+          )}
+
+          {/* BATCH TAB FORM */}
+          {activeTab === 'BATCH' && (
+            <>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-slate-600">New Batch Name</label>
+                <input 
+                  type="text" className="border border-slate-300 rounded p-2 text-sm" placeholder="Batch Name" 
+                  value={selectedBatch?.name || ''}
+                  onChange={(e) => setSelectedBatch(prev => prev ? {...prev, name: e.target.value} : { id: 'new', name: e.target.value, timings: [], starting: '', remarks: '' })}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-slate-600">Starting Date</label>
+                <input 
+                  type="date" className="border border-slate-300 rounded p-2 text-sm" 
+                  value={selectedBatch?.starting || ''}
+                  onChange={(e) => setSelectedBatch(prev => prev ? {...prev, starting: e.target.value} : { id: 'new', name: '', timings: [], starting: e.target.value, remarks: '' })}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1 md:col-span-2">
+                <label className="text-xs font-semibold text-brand-700 flex items-center gap-1">
+                   <Clock className="w-3.5 h-3.5" /> Interactive Time Slots Config
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <input 
+                    type="time" className="border border-slate-300 rounded p-2 text-sm bg-slate-50 w-32" 
+                    onChange={(e) => setNewTimeSlot(prev => `${e.target.value} - ${prev.split(' - ')[1] || ''}`)}
+                  />
+                  <span className="self-center font-bold text-slate-400">TO</span>
+                  <input 
+                    type="time" className="border border-slate-300 rounded p-2 text-sm bg-slate-50 w-32" 
+                    onChange={(e) => setNewTimeSlot(prev => `${prev.split(' - ')[0] || ''} - ${e.target.value}`)}
+                  />
+                  <button onClick={handleAddTimeSlot} className="px-4 py-2 bg-indigo-100 text-indigo-700 font-bold text-xs rounded hover:bg-indigo-200">
+                    ADD SLOT +
+                  </button>
+                </div>
+                
+                {/* Render Selected Slots */}
+                <div className="flex flex-wrap gap-2">
+                  {selectedBatch?.timings?.map((time, idx) => (
+                    <div key={idx} className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
+                       <span>{time}</span>
+                       <button onClick={() => handleRemoveTimeSlot(idx)} className="text-red-500 hover:text-red-700">x</button>
+                    </div>
+                  ))}
+                  {(!selectedBatch?.timings || selectedBatch.timings.length === 0) && <span className="text-xs text-slate-400 italic">No slots added. Provide timeslots above.</span>}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1 md:col-span-2">
+                <label className="text-xs font-semibold text-slate-600">Batch Remarks</label>
+                <input 
+                  type="text" className="border border-slate-300 rounded p-2 text-sm" placeholder="Details..." 
+                  value={selectedBatch?.remarks || ''}
+                  onChange={(e) => setSelectedBatch(prev => prev ? {...prev, remarks: e.target.value} : { id: 'new', name: '', timings: [], starting: '', remarks: e.target.value })}
+                />
+              </div>
+            </>
+          )}
+
         </div>
 
+        {/* Global Save Controls */}
         <div className="flex flex-wrap items-center gap-3 justify-end pt-4 border-t border-slate-100">
           <button onClick={handleReset} className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 text-sm font-bold rounded hover:bg-slate-200">
             <Edit className="w-4 h-4" /> RESET
@@ -248,11 +274,8 @@ const ServicesAndBatches: React.FC = () => {
           <button onClick={handleDelete} disabled={(activeTab === 'SERVICE' && !selectedService) || (activeTab === 'BATCH' && !selectedBatch)} className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 text-sm font-bold rounded hover:bg-red-100 border border-red-200 disabled:opacity-50">
             <Trash2 className="w-4 h-4" /> DELETE(*)
           </button>
-          <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 bg-brand-50 text-brand-700 text-sm font-bold rounded hover:bg-brand-100 border border-brand-200">
-            <RefreshCw className="w-4 h-4" /> UPDATE
-          </button>
           <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white text-sm font-bold rounded hover:bg-brand-700 shadow">
-            <Save className="w-4 h-4" /> SAVE PACKAGE
+            <Save className="w-4 h-4" /> SAVE RECORD
           </button>
         </div>
       </div>
@@ -261,7 +284,7 @@ const ServicesAndBatches: React.FC = () => {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 overflow-hidden flex-1">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold text-slate-800">
-            List of {activeTab === 'SERVICE' ? 'Services' : 'Batch'} (Click to View/Edit)
+            Directory of {activeTab === 'SERVICE' ? 'Services' : 'Batch Slots'} (Click to Edit)
           </h2>
         </div>
         
@@ -270,41 +293,29 @@ const ServicesAndBatches: React.FC = () => {
             <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
               <tr>
                 <th className="px-4 py-3 rounded-tl-lg">Name</th>
-                <th className="px-4 py-3">{activeTab === 'SERVICE' ? 'Methods' : 'Timings'}</th>
-                {activeTab === 'SERVICE' && <th className="px-4 py-3">Linked Batch</th>}
-                <th className="px-4 py-3">Staffs</th>
+                <th className="px-4 py-3">{activeTab === 'SERVICE' ? 'Methods' : 'Allocated Slots'}</th>
                 <th className="px-4 py-3">Starting</th>
-                <th className="px-4 py-3">Candidates</th>
-                <th className="px-4 py-3">Price</th>
+                {activeTab === 'SERVICE' && <th className="px-4 py-3">Ending</th>}
                 <th className="px-4 py-3 rounded-tr-lg">Remarks</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {activeTab === 'SERVICE' ? (
-                serviceList.map((item) => {
-                  const linkedBatch = batchList.find(b => b.id === item.batchId);
-                  return (
+                serviceList.map((item) => (
                     <tr key={item.id} onClick={() => handleRowClick(item)} className={`cursor-pointer hover:bg-brand-50 transition-colors ${selectedService?.id === item.id ? 'bg-brand-50 ring-1 ring-brand-200' : ''}`}>
                       <td className="px-4 py-3 font-semibold text-brand-700">{item.name}</td>
                       <td className="px-4 py-3 text-slate-600">{item.methods}</td>
-                      <td className="px-4 py-3 text-slate-600 font-medium text-xs">{linkedBatch?.name || 'Unlinked'}</td>
-                      <td className="px-4 py-3 text-slate-600">{item.staffs}</td>
                       <td className="px-4 py-3 text-slate-600">{item.starting}</td>
-                      <td className="px-4 py-3 text-slate-600">{item.candidates}</td>
-                      <td className="px-4 py-3 font-medium text-slate-800">{item.price}</td>
+                      <td className="px-4 py-3 text-slate-600">{item.ending || '-'}</td>
                       <td className="px-4 py-3 text-slate-500 max-w-[150px] truncate">{item.remarks}</td>
                     </tr>
-                  )
-                })
+                ))
               ) : (
                 batchList.map((item) => (
                   <tr key={item.id} onClick={() => handleRowClick(item)} className={`cursor-pointer hover:bg-brand-50 transition-colors ${selectedBatch?.id === item.id ? 'bg-brand-50 ring-1 ring-brand-200' : ''}`}>
                     <td className="px-4 py-3 font-semibold text-brand-700">{item.name}</td>
-                    <td className="px-4 py-3 text-slate-600">{item.timings}</td>
-                    <td className="px-4 py-3 text-slate-600">{item.staffs}</td>
+                    <td className="px-4 py-3 text-slate-600">{item.timings.join(', ') || 'No Time Set'}</td>
                     <td className="px-4 py-3 text-slate-600">{item.starting}</td>
-                    <td className="px-4 py-3 text-slate-600">{item.candidates}</td>
-                    <td className="px-4 py-3 font-medium text-slate-800">{item.price}</td>
                     <td className="px-4 py-3 text-slate-500 max-w-[150px] truncate">{item.remarks}</td>
                   </tr>
                 ))
