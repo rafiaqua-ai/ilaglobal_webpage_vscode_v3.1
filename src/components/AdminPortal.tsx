@@ -62,7 +62,7 @@ export default function AdminPortal() {
     'Academic Counselor': 'education'
   };
 
-  const [activeTab, setActiveTab] = useState<any>('super_admin_hub');
+  const [activeTab, setActiveTab] = useState<any>('education');
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<'All' | 'Education' | 'Study Abroad' | 'Visa' | 'Jobs'>('All');
 
   useEffect(() => {
