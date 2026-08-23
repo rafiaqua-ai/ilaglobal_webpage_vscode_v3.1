@@ -24,7 +24,6 @@ export interface ServiceItem {
   candidates: string;
   remarks: string;
   batchId?: string;
-  courseId?: string;
 }
 
 const ServicesAndBatches: React.FC = () => {
@@ -53,25 +52,57 @@ const ServicesAndBatches: React.FC = () => {
     }
   };
 
+  const handleReset = () => {
+    if (activeTab === 'SERVICE') {
+      setSelectedService(null);
+    } else {
+      setSelectedBatch(null);
+    }
+  };
+
   const handleDelete = () => {
     const confirmation = window.confirm("SECURITY OVERRIDE: Do you have explicit admin authorization to delete this record? This action is irreversible.");
     if (confirmation) {
+       if (activeTab === 'SERVICE' && selectedService) {
+         setServiceList(prev => prev.filter(s => s.id !== selectedService.id));
+         setSelectedService(null);
+       } else if (activeTab === 'BATCH' && selectedBatch) {
+         setBatchList(prev => prev.filter(b => b.id !== selectedBatch.id));
+         setSelectedBatch(null);
+       }
        alert("Record Deleted.");
-       // logic to filter out item
-       setSelectedService(null);
-       setSelectedBatch(null);
     }
   };
 
   const handleSave = () => {
     if (activeTab === 'SERVICE') {
-       if (!selectedService?.batchId) {
-         alert("Validation Error: Please select a mandatory batch slot. If one doesn't exist, create it in the Batch tab.");
+       if (!selectedService || !selectedService.name || !selectedService.batchId) {
+         alert("Validation Error: Please provide a name and select a mandatory batch slot.");
          return;
        }
-       alert("Service saved and staff assignment linked to Task Delegation.");
+       if (selectedService.id && selectedService.id !== 'new') {
+         setServiceList(prev => prev.map(s => s.id === selectedService.id ? selectedService : s));
+         alert("Service updated and staff assignment linked.");
+       } else {
+         const newService = { ...selectedService, id: Math.random().toString(36).substring(2, 9), candidates: '0' };
+         setServiceList(prev => [...prev, newService]);
+         alert("New Service saved and staff assignment linked.");
+       }
+       setSelectedService(null);
     } else {
-       alert("Batch saved successfully.");
+       if (!selectedBatch || !selectedBatch.name) {
+         alert("Validation Error: Please provide a batch name.");
+         return;
+       }
+       if (selectedBatch.id && selectedBatch.id !== 'new') {
+         setBatchList(prev => prev.map(b => b.id === selectedBatch.id ? selectedBatch : b));
+         alert("Batch updated successfully.");
+       } else {
+         const newBatch = { ...selectedBatch, id: Math.random().toString(36).substring(2, 9), candidates: '0' };
+         setBatchList(prev => [...prev, newBatch]);
+         alert("New Batch saved successfully. It is now available for linking.");
+       }
+       setSelectedBatch(null);
     }
   };
 
@@ -147,7 +178,7 @@ const ServicesAndBatches: React.FC = () => {
                       <option key={b.id} value={b.id}>{b.name} ({b.timings})</option>
                     ))}
                   </select>
-                  <button onClick={() => setActiveTab('BATCH')} className="bg-slate-100 p-2 rounded text-slate-600 hover:bg-slate-200" title="Create New Batch"><PlusCircle className="w-5 h-5"/></button>
+                  <button onClick={() => { setActiveTab('BATCH'); setSelectedBatch(null); }} className="bg-slate-100 p-2 rounded text-slate-600 hover:bg-slate-200" title="Create New Batch"><PlusCircle className="w-5 h-5"/></button>
                 </div>
              </div>
           )}
@@ -211,14 +242,14 @@ const ServicesAndBatches: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 justify-end pt-4 border-t border-slate-100">
-          <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 text-sm font-bold rounded hover:bg-slate-200">
+          <button onClick={handleReset} className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 text-sm font-bold rounded hover:bg-slate-200">
             <Edit className="w-4 h-4" /> RESET
           </button>
-          <button onClick={handleDelete} className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 text-sm font-bold rounded hover:bg-red-100 border border-red-200">
+          <button onClick={handleDelete} disabled={(activeTab === 'SERVICE' && !selectedService) || (activeTab === 'BATCH' && !selectedBatch)} className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 text-sm font-bold rounded hover:bg-red-100 border border-red-200 disabled:opacity-50">
             <Trash2 className="w-4 h-4" /> DELETE(*)
           </button>
           <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 bg-brand-50 text-brand-700 text-sm font-bold rounded hover:bg-brand-100 border border-brand-200">
-            <RefreshCw className="w-4 h-4" /> UPDATE TO COURSE CREATOR
+            <RefreshCw className="w-4 h-4" /> UPDATE
           </button>
           <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white text-sm font-bold rounded hover:bg-brand-700 shadow">
             <Save className="w-4 h-4" /> SAVE PACKAGE
@@ -232,14 +263,6 @@ const ServicesAndBatches: React.FC = () => {
           <h2 className="text-lg font-bold text-slate-800">
             List of {activeTab === 'SERVICE' ? 'Services' : 'Batch'} (Click to View/Edit)
           </h2>
-          <div className="flex gap-2">
-            <button className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded hover:bg-green-700">
-              <CheckSquare className="w-3 h-3" /> SEND APPROVAL
-            </button>
-            <button className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded hover:bg-blue-700">
-              <Send className="w-3 h-3" /> SEND UPDATE
-            </button>
-          </div>
         </div>
         
         <div className="overflow-x-auto">
