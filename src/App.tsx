@@ -25,7 +25,6 @@ import EducationPage from './components/EducationPage'
 import ApplicationPoolPage from './components/ApplicationPoolPage'
 import PrivacyPolicyPage from './components/PrivacyPolicyPage'
 import CookieBanner from './components/CookieBanner'
-import MasterDepartmentHub from './components/MasterDepartmentHub'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home')
@@ -110,7 +109,7 @@ function App() {
       {!isAdminPage && <Navbar />}
       <main className="w-full flex-grow">
         {currentPage === 'master-hub' ? (
-          <MasterDepartmentHub departmentName="Education & Training Management Hub" />
+          <AdminPortal />
         ) : currentPage === 'german-language' ? (
           <GermanLanguagePage />
         ) : currentPage === 'course-page' ? (
