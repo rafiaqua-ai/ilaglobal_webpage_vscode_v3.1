@@ -1,38 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Edit, RefreshCw, Trash2, Send, CheckSquare, Plus, Upload, BookOpen, Clock, Users, BookMarked, Settings, Info, Briefcase, FileUp } from 'lucide-react';
 
-interface CourseItem {
-  id: string;
-  name: string;
-  staff: string;
-  chapter: string;
-  duration: string;
-  methods: string;
-  materials: string;
-  fee: string;
-  students: string;
-}
-
-import { getGlobalCourses, setGlobalCourses, getGlobalServices, getGlobalBatches, GlobalCourse, GlobalService, GlobalBatch } from '../lib/db';
+import { getGlobalCourses, setGlobalCourses, getGlobalPaths, getGlobalBatches, GlobalCourse, GlobalPath, GlobalBatch } from '../lib/db';
 
 const CourseCreator: React.FC = () => {
   const [courseList, setCourseList] = useState<GlobalCourse[]>([]);
-  const [availableServices, setAvailableServices] = useState<GlobalService[]>([]);
+  const [availablePaths, setAvailablePaths] = useState<GlobalPath[]>([]);
   const [availableBatches, setAvailableBatches] = useState<GlobalBatch[]>([]);
 
   useEffect(() => {
     const loadData = () => {
       setCourseList(getGlobalCourses());
-      setAvailableServices(getGlobalServices());
+      setAvailablePaths(getGlobalPaths());
       setAvailableBatches(getGlobalBatches());
     };
     loadData();
     window.addEventListener('ilas-courses-changed', loadData);
-    window.addEventListener('ilas-services-changed', loadData);
+    window.addEventListener('ilas-paths-changed', loadData);
     window.addEventListener('ilas-batches-changed', loadData);
     return () => {
       window.removeEventListener('ilas-courses-changed', loadData);
-      window.removeEventListener('ilas-services-changed', loadData);
+      window.removeEventListener('ilas-paths-changed', loadData);
       window.removeEventListener('ilas-batches-changed', loadData);
     };
   }, []);
@@ -46,7 +34,7 @@ const CourseCreator: React.FC = () => {
   const [durationType, setDurationType] = useState('Weeks');
   const [staff, setStaff] = useState('');
   const [fee, setFee] = useState('');
-  const [selectedServiceId, setSelectedServiceId] = useState('');
+  const [selectedPathId, setSelectedPathId] = useState('');
   const [selectedCourse, setSelectedCourse] = useState<GlobalCourse | null>(null);
 
   const handleRowClick = (course: GlobalCourse) => {
@@ -71,7 +59,7 @@ const CourseCreator: React.FC = () => {
     setDurationType('Weeks');
     setStaff('');
     setFee('');
-    setSelectedServiceId('');
+    setSelectedPathId('');
   };
 
   const handleDelete = () => {
@@ -91,9 +79,9 @@ const CourseCreator: React.FC = () => {
     }
     
     let methodString = "Custom";
-    if (selectedServiceId) {
-      const s = availableServices.find(s => s.id === selectedServiceId);
-      if (s) methodString = `${s.name} [${s.methods}]`;
+    if (selectedPathId) {
+      const p = availablePaths.find(path => path.id === selectedPathId);
+      if (p) methodString = `${p.name} [${p.methods}]`;
     }
 
     const newCourse: GlobalCourse = {
@@ -207,23 +195,23 @@ const CourseCreator: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
-              <label className="text-xs font-semibold text-slate-600">TEACHING METHOD (Linked to Services & Batches)</label>
+              <label className="text-xs font-semibold text-slate-600">TEACHING METHOD (Linked to Paths & Batches)</label>
               
               <div className="space-y-2">
                  <select 
-                   value={selectedServiceId} 
-                   onChange={(e) => setSelectedServiceId(e.target.value)} 
+                   value={selectedPathId} 
+                   onChange={(e) => setSelectedPathId(e.target.value)} 
                    className="w-full border border-brand-300 rounded p-2 text-sm bg-brand-50 focus:ring-1 focus:ring-brand-500"
                  >
-                   <option value="">-- Select Pre-Configured Service Package --</option>
-                   {availableServices.map(service => (
-                     <option key={service.id} value={service.id}>
-                       {service.name} [{service.methods}]
+                   <option value="">-- Select Pre-Configured Path Package --</option>
+                   {availablePaths.map(path => (
+                     <option key={path.id} value={path.id}>
+                       {path.name} [{path.methods}]
                      </option>
                    ))}
                  </select>
               </div>
-              <p className="text-[10px] text-slate-500 italic mt-1">*Select a service package to map the teaching method and timeslot.</p>
+              <p className="text-[10px] text-slate-500 italic mt-1">*Select a path package to map the teaching method and timeslot.</p>
             </div>
             
           </div>
