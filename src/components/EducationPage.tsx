@@ -140,7 +140,7 @@ export default function EducationPage() {
           {courses.map(course => (
             <button
               key={course.id}
-              onClick={() => scrollTo(course.id)}
+              onClick={() => setActiveNav(course.id)}
               className={`text-base font-bold pb-2 transition-all cursor-pointer whitespace-nowrap ${
                 activeNav === course.id ? 'text-brand-600 border-b-2 border-brand-600' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent'
               }`}
@@ -149,7 +149,7 @@ export default function EducationPage() {
             </button>
           ))}
           <button
-              onClick={() => scrollTo('job-related-programs')}
+              onClick={() => setActiveNav('job-related-programs')}
               className={`text-base font-bold pb-2 transition-all cursor-pointer whitespace-nowrap ${
                 activeNav === 'job-related-programs' ? 'text-brand-600 border-b-2 border-brand-600' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent'
               }`}
@@ -163,8 +163,8 @@ export default function EducationPage() {
       <div className="container-max mx-auto px-6 space-y-28 pb-20">
         
         {/* Render only active dynamic course */}
-        {activeCourse && (
-          <section id={activeCourse.id} className="scroll-mt-32 border-t border-slate-200 first:border-t-0 pt-10 first:pt-0">
+        {activeCourse && activeNav !== 'job-related-programs' && (
+          <section id={activeCourse.id} className="scroll-mt-32 pt-10">
             
             {/* Header */}
             <div className="text-center max-w-3xl mx-auto mb-12">
@@ -222,10 +222,22 @@ export default function EducationPage() {
 
             </div>
 
+            {/* Dynamic Course Structure Block */}
+            {activeCourse.courseStructure && (
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-indigo-200 shadow-sm mb-8">
+                <h4 className="text-sm font-black uppercase tracking-wider text-indigo-700 mb-5 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-indigo-600" /> Syllabus & Module Breakdowns
+                </h4>
+                <div className="whitespace-pre-line text-slate-700 text-sm leading-relaxed p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  {activeCourse.courseStructure}
+                </div>
+              </div>
+            )}
+
             {/* Clickable Detailed Course Breakdown Cards */}
             <div id={`${activeCourse.id}-details`} className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm mb-8">
               <h4 className="text-sm font-black uppercase tracking-wider text-brand-600 mb-5 flex items-center gap-2">
-                <BookOpen className="w-4 h-4" /> Dynamic Course Structure
+                <BookOpen className="w-4 h-4" /> Course Specifications
               </h4>
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div 

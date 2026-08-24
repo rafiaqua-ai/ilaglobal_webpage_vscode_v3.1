@@ -114,6 +114,7 @@ export interface GlobalCourse {
   materials: string;
   fee: string;
   students: string;
+  courseStructure?: string; // stores dynamic structured details/modules
 }
 
 // Initial Seed Data
@@ -200,8 +201,8 @@ export const getGlobalCourses = (): GlobalCourse[] => {
     return parsed.sort((a, b) => (a.displayPosition || 99) - (b.displayPosition || 99));
   }
   const seed: GlobalCourse[] = [
-    { id: '1', name: 'SAP Basics', subtitle: 'Enterprise Software Training', displayPosition: 1, staff: 'Nadeem - ID 091', chapter: '12', duration: '12 Weeks', methods: 'Live Class Path (Morning Batch 1)', materials: 'Uploaded', fee: '$500', students: '25' },
-    { id: '2', name: 'German A1', subtitle: 'Beginner Level Proficiency', displayPosition: 2, staff: 'AI Bot', chapter: '15', duration: '8 Weeks', methods: 'Online FastTrack (Weekend Batch)', materials: 'Pending', fee: '$200', students: '120' }
+    { id: '1', name: 'SAP Basics', subtitle: 'Enterprise Software Training', displayPosition: 1, staff: 'Nadeem - ID 091', chapter: '12', duration: '12 Weeks', methods: 'Live Class Path (Morning Batch 1)', materials: 'Uploaded', fee: '$500', students: '25', courseStructure: 'Module 1: ERP Introduction\nModule 2: Ledger Setup\nModule 3: Integration' },
+    { id: '2', name: 'German A1', subtitle: 'Beginner Level Proficiency', displayPosition: 2, staff: 'AI Bot', chapter: '15', duration: '8 Weeks', methods: 'Online FastTrack (Weekend Batch)', materials: 'Pending', fee: '$200', students: '120', courseStructure: 'Module 1: Alphabets & Phonetics\nModule 2: Conversational Basics\nModule 3: Simple Verbs' }
   ];
   localStorage.setItem('ilas_courses', JSON.stringify(seed));
   return seed.sort((a, b) => (a.displayPosition || 99) - (b.displayPosition || 99));

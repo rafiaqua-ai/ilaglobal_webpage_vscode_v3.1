@@ -35,6 +35,7 @@ const CourseCreator: React.FC = () => {
   const [staff, setStaff] = useState('');
   const [fee, setFee] = useState('');
   const [selectedPathId, setSelectedPathId] = useState('');
+  const [courseStructure, setCourseStructure] = useState('');
   const [selectedCourse, setSelectedCourse] = useState<GlobalCourse | null>(null);
 
   const handleRowClick = (course: GlobalCourse) => {
@@ -42,6 +43,7 @@ const CourseCreator: React.FC = () => {
     setCourseName(course.name);
     setSubtitle(course.subtitle || '');
     setDisplayPosition(course.displayPosition || 1);
+    setCourseStructure(course.courseStructure || '');
     setChapters(course.chapter);
     setDurationVal(course.duration.split(' ')[0]);
     setDurationType(course.duration.split(' ')[1] || 'Weeks');
@@ -54,6 +56,7 @@ const CourseCreator: React.FC = () => {
     setCourseName('');
     setSubtitle('');
     setDisplayPosition(1);
+    setCourseStructure('');
     setChapters('');
     setDurationVal('');
     setDurationType('Weeks');
@@ -95,7 +98,8 @@ const CourseCreator: React.FC = () => {
       methods: methodString,
       materials: 'Pending Uploads',
       fee: `$${fee || '0'}`,
-      students: '0'
+      students: '0',
+      courseStructure: courseStructure
     };
 
     if (selectedCourse) {
@@ -192,6 +196,16 @@ const CourseCreator: React.FC = () => {
               <button className="bg-amber-100 text-amber-700 p-2 px-3 rounded text-xs font-bold hover:bg-amber-200 border border-amber-200 flex items-center gap-1">
                 <Briefcase className="w-4 h-4" /> (ADD TASK)
               </button>
+            </div>
+
+            <div className="flex flex-col gap-1 pt-2 border-t border-slate-100">
+              <label className="text-xs font-semibold text-slate-600">DYNAMIC COURSE STRUCTURE & DETAILS</label>
+              <textarea 
+                value={courseStructure} 
+                onChange={(e) => setCourseStructure(e.target.value)}
+                className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-1 focus:ring-brand-500 h-24 resize-none" 
+                placeholder="Enter structure/modules line-by-line or descriptive details..."
+              />
             </div>
 
             <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
