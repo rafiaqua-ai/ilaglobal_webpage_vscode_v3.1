@@ -195,17 +195,21 @@ export const setGlobalBatches = (batches: GlobalBatch[]) => {
 
 export const getGlobalCourses = (): GlobalCourse[] => {
   const data = localStorage.getItem('ilas_courses');
-  if (data) return JSON.parse(data);
+  if (data) {
+    const parsed: GlobalCourse[] = JSON.parse(data);
+    return parsed.sort((a, b) => (a.displayPosition || 99) - (b.displayPosition || 99));
+  }
   const seed: GlobalCourse[] = [
     { id: '1', name: 'SAP Basics', subtitle: 'Enterprise Software Training', displayPosition: 1, staff: 'Nadeem - ID 091', chapter: '12', duration: '12 Weeks', methods: 'Live Class Path (Morning Batch 1)', materials: 'Uploaded', fee: '$500', students: '25' },
     { id: '2', name: 'German A1', subtitle: 'Beginner Level Proficiency', displayPosition: 2, staff: 'AI Bot', chapter: '15', duration: '8 Weeks', methods: 'Online FastTrack (Weekend Batch)', materials: 'Pending', fee: '$200', students: '120' }
   ];
   localStorage.setItem('ilas_courses', JSON.stringify(seed));
-  return seed;
+  return seed.sort((a, b) => (a.displayPosition || 99) - (b.displayPosition || 99));
 };
 
 export const setGlobalCourses = (courses: GlobalCourse[]) => {
-  localStorage.setItem('ilas_courses', JSON.stringify(courses));
+  const sorted = [...courses].sort((a, b) => (a.displayPosition || 99) - (b.displayPosition || 99));
+  localStorage.setItem('ilas_courses', JSON.stringify(sorted));
   window.dispatchEvent(new CustomEvent('ilas-courses-changed'));
 };
 

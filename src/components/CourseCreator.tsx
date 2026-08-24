@@ -73,8 +73,8 @@ const CourseCreator: React.FC = () => {
   };
 
   const handleSave = () => {
-    if (!courseName || !chapters || !durationVal || !staff) {
-      alert("Please fill all required course metadata fields.");
+    if (!courseName) {
+      alert("Please provide at least a Course Title.");
       return;
     }
     

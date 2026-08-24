@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Star, BrainCircuit, Play, ArrowRight, Zap, MessageCircle, 
   Crown, Briefcase, GraduationCap, Gift, Code, 
   Layers, BookOpen, Search, CheckCircle2 
 } from 'lucide-react';
+import { getGlobalCourses, GlobalCourse } from '../lib/db';
 
 const benefitItems = [
   { icon: Briefcase, title: "Work While You Study", highlight: "Junior Consultant", desc: "with verified monthly stipend.", link: "#learn-while-earn" },
@@ -83,8 +84,24 @@ const courseSections = [
 ];
 
 export default function EducationPage() {
-  const [activeNav, setActiveNav] = useState('german-language');
+  const [courses, setCourses] = useState<GlobalCourse[]>([]);
+  const [activeNav, setActiveNav] = useState('');
   const [selectedJobCourse, setSelectedJobCourse] = useState(fastTrackCourses[0].name);
+
+  useEffect(() => {
+    const loadCourses = () => {
+      const data = getGlobalCourses();
+      setCourses(data);
+      if (data.length > 0 && !activeNav) {
+        setActiveNav(data[0].id);
+      }
+    };
+    loadCourses();
+    window.addEventListener('ilas-courses-changed', loadCourses);
+    return () => window.removeEventListener('ilas-courses-changed', loadCourses);
+  }, [activeNav]);
+
+  const activeCourse = courses.find(c => c.id === activeNav) || courses[0];
 
   const navigateTo = (url: string) => { window.location.hash = url; };
   const openTrial = () => { window.dispatchEvent(new CustomEvent('open-language-trainer')); };
@@ -120,61 +137,63 @@ export default function EducationPage() {
       {/* 2. Sleek Underline Navigation */}
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 py-4 mb-12 transition-all duration-300">
         <div className="container-max mx-auto px-6 flex justify-start md:justify-center gap-8 overflow-x-auto hide-scrollbar">
-          {[
-            { id: 'german-language', label: 'German Language' },
-            { id: 'ielts-prep', label: 'IELTS & English' },
-            { id: 'software-tech', label: 'Software & Tech' },
-            { id: 'job-related-programs', label: 'Job-Related Certifications' }
-          ].map(tab => (
+          {courses.map(course => (
             <button
-              key={tab.id}
-              onClick={() => scrollTo(tab.id)}
+              key={course.id}
+              onClick={() => scrollTo(course.id)}
               className={`text-base font-bold pb-2 transition-all cursor-pointer whitespace-nowrap ${
-                activeNav === tab.id ? 'text-brand-600 border-b-2 border-brand-600' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent'
+                activeNav === course.id ? 'text-brand-600 border-b-2 border-brand-600' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent'
               }`}
             >
-              {tab.label}
+              {course.name}
             </button>
           ))}
+          <button
+              onClick={() => scrollTo('job-related-programs')}
+              className={`text-base font-bold pb-2 transition-all cursor-pointer whitespace-nowrap ${
+                activeNav === 'job-related-programs' ? 'text-brand-600 border-b-2 border-brand-600' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent'
+              }`}
+            >
+              Job-Related Certifications
+          </button>
         </div>
       </div>
 
       {/* 3. Main Sections */}
       <div className="container-max mx-auto px-6 space-y-28 pb-20">
         
-        {courseSections.map((sec) => (
-          <section key={sec.id} id={sec.id} className="scroll-mt-32 border-t border-slate-200 first:border-t-0 pt-10 first:pt-0">
+        {/* Render only active dynamic course */}
+        {activeCourse && (
+          <section id={activeCourse.id} className="scroll-mt-32 border-t border-slate-200 first:border-t-0 pt-10 first:pt-0">
             
             {/* Header */}
             <div className="text-center max-w-3xl mx-auto mb-12">
-              <span className="text-xs font-black tracking-widest text-brand-700 uppercase bg-brand-50 px-3.5 py-1 rounded-full border border-brand-200">{sec.tag}</span>
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 mt-3 mb-2">{sec.title}</h2>
-              <p className="text-slate-600 text-base">{sec.subtitle}</p>
+              <span className="text-xs font-black tracking-widest text-brand-700 uppercase bg-brand-50 px-3.5 py-1 rounded-full border border-brand-200">Featured Course</span>
+              <h2 className="text-3xl md:text-4xl font-black text-slate-900 mt-3 mb-2">{activeCourse.name}</h2>
+              <p className="text-slate-600 text-base">{activeCourse.subtitle || 'Comprehensive enterprise-level education & training framework.'}</p>
             </div>
 
             <div className="grid lg:grid-cols-12 gap-10 items-start mb-8">
               
-              {/* Courses List */}
+              {/* Dynamic Path Methods */}
               <div className="lg:col-span-6 space-y-4">
-                {sec.courses.map((c) => (
-                  <div key={c.title} className={`bg-white p-5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm transition-all ${c.active ? 'border-2 border-brand-500 bg-brand-50/10' : 'border-slate-200 hover:border-brand-400'}`}>
+                  <div className={`bg-white p-5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm transition-all border-2 border-brand-500 bg-brand-50/10`}>
                     <div className="flex items-center gap-3.5">
-                      <c.icon className={`w-6 h-6 ${c.active ? 'text-brand-600' : 'text-slate-500'}`} />
-                      <div className="font-bold text-slate-900 text-base">{c.title}</div>
+                      <BrainCircuit className={`w-6 h-6 text-brand-600`} />
+                      <div className="font-bold text-slate-900 text-base">{activeCourse.methods}</div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <button onClick={() => scrollTo(`${sec.id}-details`)} className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1">
+                      <button onClick={() => scrollTo(`${activeCourse.id}-details`)} className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1">
                         <BookOpen className="w-3.5 h-3.5" /> Details
                       </button>
                       <button onClick={openTrial} className="px-3.5 py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1">
                         <Play className="w-3.5 h-3.5" /> Free Trial
                       </button>
-                      <button onClick={() => navigateTo(`#applications?tab=${sec.tabName}`)} className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-xl cursor-pointer transition-all">
+                      <button onClick={() => navigateTo(`#applications?tab=${encodeURIComponent(activeCourse.name)}`)} className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-xl cursor-pointer transition-all">
                         Enroll
                       </button>
                     </div>
                   </div>
-                ))}
               </div>
 
               {/* Guaranteed Benefits with Golden Highlights & Accurate Links */}
@@ -204,24 +223,46 @@ export default function EducationPage() {
             </div>
 
             {/* Clickable Detailed Course Breakdown Cards */}
-            <div id={`${sec.id}-details`} className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm mb-8">
+            <div id={`${activeCourse.id}-details`} className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm mb-8">
               <h4 className="text-sm font-black uppercase tracking-wider text-brand-600 mb-5 flex items-center gap-2">
-                <BookOpen className="w-4 h-4" /> Course Progression & Level Breakdown
+                <BookOpen className="w-4 h-4" /> Dynamic Course Structure
               </h4>
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {sec.levels.map((lvl) => (
                   <div 
-                    key={lvl.code}
-                    onClick={() => navigateTo(`#course-details?subject=${encodeURIComponent(sec.title)}&level=${encodeURIComponent(lvl.code)}`)}
                     className="p-5 rounded-2xl bg-slate-50 hover:bg-brand-50/50 border border-slate-100 hover:border-brand-300 transition-all cursor-pointer group"
                   >
                     <div className="font-black text-slate-900 group-hover:text-brand-700 text-base mb-1.5 flex items-center justify-between">
-                      <span>{lvl.code}</span>
-                      <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <span>Chapters</span>
                     </div>
-                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{lvl.desc}</p>
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{activeCourse.chapter} Chapters included</p>
                   </div>
-                ))}
+
+                  <div 
+                    className="p-5 rounded-2xl bg-slate-50 hover:bg-brand-50/50 border border-slate-100 hover:border-brand-300 transition-all cursor-pointer group"
+                  >
+                    <div className="font-black text-slate-900 group-hover:text-brand-700 text-base mb-1.5 flex items-center justify-between">
+                      <span>Duration</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{activeCourse.duration}</p>
+                  </div>
+
+                  <div 
+                    className="p-5 rounded-2xl bg-slate-50 hover:bg-brand-50/50 border border-slate-100 hover:border-brand-300 transition-all cursor-pointer group"
+                  >
+                    <div className="font-black text-slate-900 group-hover:text-brand-700 text-base mb-1.5 flex items-center justify-between">
+                      <span>Course Fee</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{activeCourse.fee}</p>
+                  </div>
+
+                  <div 
+                    className="p-5 rounded-2xl bg-slate-50 hover:bg-brand-50/50 border border-slate-100 hover:border-brand-300 transition-all cursor-pointer group"
+                  >
+                    <div className="font-black text-slate-900 group-hover:text-brand-700 text-base mb-1.5 flex items-center justify-between">
+                      <span>Staff Assigned</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{activeCourse.staff}</p>
+                  </div>
               </div>
             </div>
 
@@ -240,7 +281,7 @@ export default function EducationPage() {
             </div>
 
           </section>
-        ))}
+        )}
 
         {/* ================= JOB-RELATED PROGRAMS (Courses on Top -> Select Path Below) ================= */}
         <section id="job-related-programs" className="scroll-mt-32 border-t border-slate-200 pt-16">
