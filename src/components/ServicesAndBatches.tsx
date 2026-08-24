@@ -1,51 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Save, Edit, RefreshCw, Trash2, Send, CheckSquare, PlusCircle, Clock } from 'lucide-react';
+import { getGlobalServices, setGlobalServices, getGlobalBatches, setGlobalBatches, GlobalService, GlobalBatch } from '../lib/db';
 
 type TabType = 'SERVICE' | 'BATCH';
-
-export interface BatchItem {
-  id: string;
-  name: string;
-  timings: string[]; // now an array of timeslots
-  starting: string;
-  remarks: string;
-}
-
-export interface ServiceItem {
-  id: string;
-  name: string;
-  methods: string;
-  starting: string;
-  ending: string;
-  remarks: string;
-}
 
 const ServicesAndBatches: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('SERVICE');
   
   // State for populating forms
-  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
-  const [selectedBatch, setSelectedBatch] = useState<BatchItem | null>(null);
+  const [selectedService, setSelectedService] = useState<GlobalService | null>(null);
+  const [selectedBatch, setSelectedBatch] = useState<GlobalBatch | null>(null);
 
-  // Global Mock Store Data (for demo)
-  const [batchList, setBatchList] = useState<BatchItem[]>([
-    { id: '1', name: 'Morning Batch 1', timings: ['09:00 - 11:00', '11:00 - 13:00'], starting: '2026-10-12', remarks: 'Full' },
-    { id: '2', name: 'Weekend Batch', timings: ['14:00 - 17:00'], starting: '2026-10-15', remarks: 'Open' },
-  ]);
+  const [batchList, setBatchList] = useState<GlobalBatch[]>([]);
+  const [serviceList, setServiceList] = useState<GlobalService[]>([]);
 
-  const [serviceList, setServiceList] = useState<ServiceItem[]>([
-    { id: '1', name: 'Live Class Path', methods: 'Live', starting: '2026-10-12', ending: '2026-12-12', remarks: 'Standard Plan' },
-    { id: '2', name: 'Online FastTrack', methods: 'Video+AI', starting: '2026-10-15', ending: '2026-11-15', remarks: 'Self-paced' },
-  ]);
+  useEffect(() => {
+    const loadData = () => {
+      setBatchList(getGlobalBatches());
+      setServiceList(getGlobalServices());
+    };
+    loadData();
+    window.addEventListener('ilas-services-changed', loadData);
+    window.addEventListener('ilas-batches-changed', loadData);
+    return () => {
+      window.removeEventListener('ilas-services-changed', loadData);
+      window.removeEventListener('ilas-batches-changed', loadData);
+    };
+  }, []);
 
   // Form Temp States for Timeslots
   const [newTimeSlot, setNewTimeSlot] = useState('');
 
   const handleRowClick = (item: any) => {
     if (activeTab === 'SERVICE') {
-      setSelectedService(item as ServiceItem);
+      setSelectedService(item as GlobalService);
     } else {
-      setSelectedBatch(item as BatchItem);
+      setSelectedBatch(item as GlobalBatch);
       setNewTimeSlot('');
     }
   };
@@ -63,10 +53,12 @@ const ServicesAndBatches: React.FC = () => {
     const confirmation = window.confirm("SECURITY OVERRIDE: Do you have explicit admin authorization to delete this record? This action is irreversible.");
     if (confirmation) {
        if (activeTab === 'SERVICE' && selectedService) {
-         setServiceList(prev => prev.filter(s => s.id !== selectedService.id));
+         const updated = serviceList.filter(s => s.id !== selectedService.id);
+         setGlobalServices(updated);
          setSelectedService(null);
        } else if (activeTab === 'BATCH' && selectedBatch) {
-         setBatchList(prev => prev.filter(b => b.id !== selectedBatch.id));
+         const updated = batchList.filter(b => b.id !== selectedBatch.id);
+         setGlobalBatches(updated);
          setSelectedBatch(null);
        }
        alert("Record Deleted.");
@@ -98,11 +90,13 @@ const ServicesAndBatches: React.FC = () => {
          return;
        }
        if (selectedService.id && selectedService.id !== 'new') {
-         setServiceList(prev => prev.map(s => s.id === selectedService.id ? selectedService : s));
+         const updated = serviceList.map(s => s.id === selectedService.id ? selectedService : s);
+         setGlobalServices(updated);
          alert("Service updated.");
        } else {
          const newService = { ...selectedService, id: Math.random().toString(36).substring(2, 9) };
-         setServiceList(prev => [...prev, newService]);
+         const updated = [...serviceList, newService];
+         setGlobalServices(updated);
          alert("New Service appended to directory.");
        }
        setSelectedService(null);
@@ -112,11 +106,13 @@ const ServicesAndBatches: React.FC = () => {
          return;
        }
        if (selectedBatch.id && selectedBatch.id !== 'new') {
-         setBatchList(prev => prev.map(b => b.id === selectedBatch.id ? selectedBatch : b));
+         const updated = batchList.map(b => b.id === selectedBatch.id ? selectedBatch : b);
+         setGlobalBatches(updated);
          alert("Batch updated successfully.");
        } else {
          const newBatch = { ...selectedBatch, id: Math.random().toString(36).substring(2, 9) };
-         setBatchList(prev => [...prev, newBatch]);
+         const updated = [...batchList, newBatch];
+         setGlobalBatches(updated);
          alert("New Batch appended successfully.");
        }
        setSelectedBatch(null);

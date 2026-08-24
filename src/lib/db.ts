@@ -82,6 +82,36 @@ export interface UpdateLog {
   category: 'System' | 'Content' | 'Personnel' | 'Data';
 }
 
+// Education Hub Data Types
+export interface GlobalService {
+  id: string;
+  name: string;
+  methods: string;
+  starting: string;
+  ending: string;
+  remarks: string;
+}
+
+export interface GlobalBatch {
+  id: string;
+  name: string;
+  timings: string[];
+  starting: string;
+  remarks: string;
+}
+
+export interface GlobalCourse {
+  id: string;
+  name: string;
+  staff: string;
+  chapter: string;
+  duration: string;
+  methods: string;
+  materials: string;
+  fee: string;
+  students: string;
+}
+
 // Initial Seed Data
 const SEED_INQUIRIES: Inquiry[] = [
   {
@@ -125,6 +155,57 @@ const SEED_ATTENDANCE: AttendanceLog[] = [
   { id: 'ATT-1', staffId: 'STAFF-001', staffName: 'Super Admin', checkInTime: '09:00 AM', status: 'Present', date: new Date().toLocaleDateString() },
   { id: 'ATT-2', staffId: 'STAFF-002', staffName: 'HR Manager Lead', checkInTime: '09:15 AM', status: 'Present', date: new Date().toLocaleDateString() }
 ];
+
+// DB Retrieval & Save Functions
+// --- Education Hub DB Handlers ---
+export const getGlobalServices = (): GlobalService[] => {
+  const data = localStorage.getItem('ilas_services');
+  if (data) return JSON.parse(data);
+  const seed = [
+    { id: '1', name: 'Live Class Path', methods: 'Live', starting: '2026-10-12', ending: '2026-12-12', remarks: 'Standard Plan' },
+    { id: '2', name: 'Online FastTrack', methods: 'Video+AI', starting: '2026-10-15', ending: '2026-11-15', remarks: 'Self-paced' },
+  ];
+  localStorage.setItem('ilas_services', JSON.stringify(seed));
+  return seed;
+};
+
+export const setGlobalServices = (services: GlobalService[]) => {
+  localStorage.setItem('ilas_services', JSON.stringify(services));
+  window.dispatchEvent(new CustomEvent('ilas-services-changed'));
+};
+
+export const getGlobalBatches = (): GlobalBatch[] => {
+  const data = localStorage.getItem('ilas_batches');
+  if (data) return JSON.parse(data);
+  const seed = [
+    { id: '1', name: 'Morning Batch 1', timings: ['09:00 - 11:00', '11:00 - 13:00'], starting: '2026-10-12', remarks: 'Full' },
+    { id: '2', name: 'Weekend Batch', timings: ['14:00 - 17:00'], starting: '2026-10-15', remarks: 'Open' },
+  ];
+  localStorage.setItem('ilas_batches', JSON.stringify(seed));
+  return seed;
+};
+
+export const setGlobalBatches = (batches: GlobalBatch[]) => {
+  localStorage.setItem('ilas_batches', JSON.stringify(batches));
+  window.dispatchEvent(new CustomEvent('ilas-batches-changed'));
+};
+
+export const getGlobalCourses = (): GlobalCourse[] => {
+  const data = localStorage.getItem('ilas_courses');
+  if (data) return JSON.parse(data);
+  const seed = [
+    { id: '1', name: 'SAP Basics', staff: 'Nadeem - ID 091', chapter: '12', duration: '12 Weeks', methods: 'Live Class Path (Morning Batch 1)', materials: 'Uploaded', fee: '$500', students: '25' },
+    { id: '2', name: 'German A1', staff: 'AI Bot', chapter: '15', duration: '8 Weeks', methods: 'Online FastTrack (Weekend Batch)', materials: 'Pending', fee: '$200', students: '120' }
+  ];
+  localStorage.setItem('ilas_courses', JSON.stringify(seed));
+  return seed;
+};
+
+export const setGlobalCourses = (courses: GlobalCourse[]) => {
+  localStorage.setItem('ilas_courses', JSON.stringify(courses));
+  window.dispatchEvent(new CustomEvent('ilas-courses-changed'));
+};
+
 
 // DB Retrieval & Save Functions
 export const getGlobalApprovals = (): ApprovalRequest[] => {

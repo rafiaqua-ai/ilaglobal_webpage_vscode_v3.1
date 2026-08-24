@@ -13,17 +13,29 @@ interface CourseItem {
   students: string;
 }
 
-// Simulated imported state from ServicesAndBatches module
-const availableServices = [
-  { id: '1', name: 'Premium IELTS Camp', method: 'Live Class', batch: 'Morning Batch 1 (10 AM - 12 PM)' },
-  { id: '2', name: 'German A1 FastTrack', method: 'Online Class', batch: 'Weekend Batch (2 PM - 5 PM)' }
-];
+import { getGlobalCourses, setGlobalCourses, getGlobalServices, getGlobalBatches, GlobalCourse, GlobalService, GlobalBatch } from '../lib/db';
 
 const CourseCreator: React.FC = () => {
-  const [courseList, setCourseList] = useState<CourseItem[]>([
-    { id: '1', name: 'SAP Basics', staff: 'Nadeem - ID 091', chapter: '12', duration: '12 Weeks', methods: 'Live Class', materials: 'Uploaded', fee: '$500', students: '25' },
-    { id: '2', name: 'German A1', staff: 'AI Bot', chapter: '15', duration: '8 Weeks', methods: 'Online Class', materials: 'Pending', fee: '$200', students: '120' }
-  ]);
+  const [courseList, setCourseList] = useState<GlobalCourse[]>([]);
+  const [availableServices, setAvailableServices] = useState<GlobalService[]>([]);
+  const [availableBatches, setAvailableBatches] = useState<GlobalBatch[]>([]);
+
+  useEffect(() => {
+    const loadData = () => {
+      setCourseList(getGlobalCourses());
+      setAvailableServices(getGlobalServices());
+      setAvailableBatches(getGlobalBatches());
+    };
+    loadData();
+    window.addEventListener('ilas-courses-changed', loadData);
+    window.addEventListener('ilas-services-changed', loadData);
+    window.addEventListener('ilas-batches-changed', loadData);
+    return () => {
+      window.removeEventListener('ilas-courses-changed', loadData);
+      window.removeEventListener('ilas-services-changed', loadData);
+      window.removeEventListener('ilas-batches-changed', loadData);
+    };
+  }, []);
 
   // Form State
   const [courseName, setCourseName] = useState('');
@@ -33,9 +45,9 @@ const CourseCreator: React.FC = () => {
   const [staff, setStaff] = useState('');
   const [fee, setFee] = useState('');
   const [selectedServiceId, setSelectedServiceId] = useState('');
-  const [selectedCourse, setSelectedCourse] = useState<CourseItem | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<GlobalCourse | null>(null);
 
-  const handleRowClick = (course: CourseItem) => {
+  const handleRowClick = (course: GlobalCourse) => {
     setSelectedCourse(course);
     setCourseName(course.name);
     setChapters(course.chapter);
@@ -60,7 +72,8 @@ const CourseCreator: React.FC = () => {
     if (!selectedCourse) return;
     const confirm = window.confirm("Are you sure you want to delete this course?");
     if (confirm) {
-      setCourseList(prev => prev.filter(c => c.id !== selectedCourse.id));
+      const updated = courseList.filter(c => c.id !== selectedCourse.id);
+      setGlobalCourses(updated);
       handleReset();
     }
   };
@@ -74,10 +87,10 @@ const CourseCreator: React.FC = () => {
     let methodString = "Custom";
     if (selectedServiceId) {
       const s = availableServices.find(s => s.id === selectedServiceId);
-      if (s) methodString = `${s.method} (${s.batch})`;
+      if (s) methodString = `${s.name} [${s.methods}]`;
     }
 
-    const newCourse: CourseItem = {
+    const newCourse: GlobalCourse = {
       id: selectedCourse?.id || Math.random().toString(36).substr(2, 9),
       name: courseName,
       staff: staff,
@@ -90,10 +103,12 @@ const CourseCreator: React.FC = () => {
     };
 
     if (selectedCourse) {
-      setCourseList(prev => prev.map(c => c.id === selectedCourse.id ? newCourse : c));
+      const updated = courseList.map(c => c.id === selectedCourse.id ? newCourse : c);
+      setGlobalCourses(updated);
       alert("Course Updated.");
     } else {
-      setCourseList(prev => [...prev, newCourse]);
+      const updated = [...courseList, newCourse];
+      setGlobalCourses(updated);
       alert("Course Created and Saved.");
     }
     handleReset();
@@ -181,7 +196,7 @@ const CourseCreator: React.FC = () => {
                    <option value="">-- Select Pre-Configured Service Package --</option>
                    {availableServices.map(service => (
                      <option key={service.id} value={service.id}>
-                       {service.name} [{service.method}] - {service.batch}
+                       {service.name} [{service.methods}]
                      </option>
                    ))}
                  </select>
