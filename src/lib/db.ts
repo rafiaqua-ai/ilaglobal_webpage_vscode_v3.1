@@ -90,7 +90,7 @@ export interface GlobalPath {
   starting: string;
   ending: string;
   remarks: string;
-  linkedCourseId?: string; // New relation linking path to specific course
+  linkedCourseId?: string;
 }
 
 export interface GlobalBatch {
@@ -99,7 +99,7 @@ export interface GlobalBatch {
   timings: string[];
   starting: string;
   remarks: string;
-  linkedPathId?: string; // Links specific batch to a training path
+  linkedPathId?: string;
 }
 
 export interface GlobalCourse {
@@ -161,7 +161,6 @@ const SEED_ATTENDANCE: AttendanceLog[] = [
 ];
 
 // DB Retrieval & Save Functions
-// --- Education Hub DB Handlers ---
 export const getGlobalPaths = (): GlobalPath[] => {
   const data = localStorage.getItem('ilas_paths');
   if (data) return JSON.parse(data);
@@ -210,8 +209,6 @@ export const setGlobalCourses = (courses: GlobalCourse[]) => {
   window.dispatchEvent(new CustomEvent('ilas-courses-changed'));
 };
 
-
-// DB Retrieval & Save Functions
 export const getGlobalApprovals = (): ApprovalRequest[] => {
   const data = localStorage.getItem('ilas_global_approvals');
   return data ? JSON.parse(data) : [];
@@ -369,10 +366,6 @@ export const saveEnterpriseTask = (task: Omit<EnterpriseTask, 'id' | 'createdAt'
   return updated;
 };
 
-// ==========================================
-// INTERNAL HR & STAFF DIRECTORY DB FUNCTIONS
-// ==========================================
-
 export const getStaffRegistry = (): StaffUser[] => {
   const data = localStorage.getItem('ilas_staff_registry');
   if (!data) {
@@ -421,7 +414,7 @@ export const logStaffAttendance = (staffId: string, staffName: string, status: A
   window.dispatchEvent(new CustomEvent('ilas-attendance-changed'));
   return updated;
 };
-// Finance Sync Function to be called from HR
+
 export const syncHRPayrollToFinance = (totalPayrollAmount: number, department: string) => {
   const ledgerData = localStorage.getItem('ilas_ledger');
   const ledger = ledgerData ? JSON.parse(ledgerData) : [];
@@ -438,13 +431,9 @@ export const syncHRPayrollToFinance = (totalPayrollAmount: number, department: s
   localStorage.setItem('ilas_ledger', JSON.stringify([newExpense, ...ledger]));
   window.dispatchEvent(new CustomEvent('ilas-ledger-changed'));
 };
-// ==========================================
-// EDUCATION & STUDENT PAYMENT APPROVAL DB FUNCTIONS
-// ==========================================
 
 export const getPendingStudentInquiries = (): Inquiry[] => {
   const inquiries = getInquiries();
-  // Education വിഭാഗത്തിലുള്ളതും പേയ്‌മെന്റ് പെൻഡിങ് ഉള്ളതുമായ ലീഡുകൾ ഫിൽട്ടർ ചെയ്യുന്നു
   return inquiries.filter(item => item.category === 'Education' && item.paymentStatus !== 'Paid');
 };
 
@@ -464,13 +453,7 @@ export const approveStudentPaymentAndUnlock = (id: string, classLink: string): I
   window.dispatchEvent(new CustomEvent('ilas-inquiries-changed'));
   return updated;
 };
-// നിലവിലുള്ള കോഡിന്റെ ഒടുവിലായി ഇത് കൂടി ചേർക്കുക:
 
-// ==========================================
-// AUTOMATED PAYMENT & COURSE ACCESS MANAGER
-// ==========================================
-
-// പേയ്‌മെന്റ് ഗേറ്റ്‌വേയിൽ നിന്ന് വരുന്ന വിവരങ്ങൾ വെച്ച് സ്റ്റുഡന്റിനെ ഓട്ടോമാറ്റിക് ആയി അപ്രൂവ് ചെയ്യാൻ
 export const processAutomatedPayment = (inquiryId: string, transactionId: string, amount: string): Inquiry[] => {
   const inquiries = getInquiries();
   const updated = inquiries.map(item => {
@@ -486,13 +469,11 @@ export const processAutomatedPayment = (inquiryId: string, transactionId: string
   localStorage.setItem('ilas_inquiries', JSON.stringify(updated));
   window.dispatchEvent(new CustomEvent('ilas-inquiries-changed'));
   
-  // ഫിനാൻസ് ലെഡ്ജറിലേക്ക് റെവന്യൂ സിങ്ക് ചെയ്യുന്നു
   syncEducationRevenueToFinance(amount, `Online Payment: ${transactionId}`);
   
   return updated;
 };
 
-// ഫിനാൻസ് ഡിപ്പാർട്ട്മെന്റിലേക്ക് ഓട്ടോമാറ്റിക് എൻട്രി ഇടാൻ
 export const syncEducationRevenueToFinance = (amount: string, description: string) => {
   const ledgerData = localStorage.getItem('ilas_ledger');
   const ledger = ledgerData ? JSON.parse(ledgerData) : [];
