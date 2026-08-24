@@ -83,13 +83,14 @@ export interface UpdateLog {
 }
 
 // Education Hub Data Types
-export interface GlobalService {
+export interface GlobalPath {
   id: string;
   name: string;
   methods: string;
   starting: string;
   ending: string;
   remarks: string;
+  linkedCourseId?: string; // New relation linking path to specific course
 }
 
 export interface GlobalBatch {
@@ -98,11 +99,14 @@ export interface GlobalBatch {
   timings: string[];
   starting: string;
   remarks: string;
+  linkedPathId?: string; // Links specific batch to a training path
 }
 
 export interface GlobalCourse {
   id: string;
   name: string;
+  subtitle: string;
+  displayPosition: number;
   staff: string;
   chapter: string;
   duration: string;
@@ -158,20 +162,20 @@ const SEED_ATTENDANCE: AttendanceLog[] = [
 
 // DB Retrieval & Save Functions
 // --- Education Hub DB Handlers ---
-export const getGlobalServices = (): GlobalService[] => {
-  const data = localStorage.getItem('ilas_services');
+export const getGlobalPaths = (): GlobalPath[] => {
+  const data = localStorage.getItem('ilas_paths');
   if (data) return JSON.parse(data);
-  const seed = [
-    { id: '1', name: 'Live Class Path', methods: 'Live', starting: '2026-10-12', ending: '2026-12-12', remarks: 'Standard Plan' },
-    { id: '2', name: 'Online FastTrack', methods: 'Video+AI', starting: '2026-10-15', ending: '2026-11-15', remarks: 'Self-paced' },
+  const seed: GlobalPath[] = [
+    { id: '1', name: 'Live Class Path', methods: 'Live', starting: '2026-10-12', ending: '2026-12-12', remarks: 'Standard Plan', linkedCourseId: '1' },
+    { id: '2', name: 'Online FastTrack', methods: 'Video+AI', starting: '2026-10-15', ending: '2026-11-15', remarks: 'Self-paced', linkedCourseId: '2' },
   ];
-  localStorage.setItem('ilas_services', JSON.stringify(seed));
+  localStorage.setItem('ilas_paths', JSON.stringify(seed));
   return seed;
 };
 
-export const setGlobalServices = (services: GlobalService[]) => {
-  localStorage.setItem('ilas_services', JSON.stringify(services));
-  window.dispatchEvent(new CustomEvent('ilas-services-changed'));
+export const setGlobalPaths = (paths: GlobalPath[]) => {
+  localStorage.setItem('ilas_paths', JSON.stringify(paths));
+  window.dispatchEvent(new CustomEvent('ilas-paths-changed'));
 };
 
 export const getGlobalBatches = (): GlobalBatch[] => {
@@ -193,9 +197,9 @@ export const setGlobalBatches = (batches: GlobalBatch[]) => {
 export const getGlobalCourses = (): GlobalCourse[] => {
   const data = localStorage.getItem('ilas_courses');
   if (data) return JSON.parse(data);
-  const seed = [
-    { id: '1', name: 'SAP Basics', staff: 'Nadeem - ID 091', chapter: '12', duration: '12 Weeks', methods: 'Live Class Path (Morning Batch 1)', materials: 'Uploaded', fee: '$500', students: '25' },
-    { id: '2', name: 'German A1', staff: 'AI Bot', chapter: '15', duration: '8 Weeks', methods: 'Online FastTrack (Weekend Batch)', materials: 'Pending', fee: '$200', students: '120' }
+  const seed: GlobalCourse[] = [
+    { id: '1', name: 'SAP Basics', subtitle: 'Enterprise Software Training', displayPosition: 1, staff: 'Nadeem - ID 091', chapter: '12', duration: '12 Weeks', methods: 'Live Class Path (Morning Batch 1)', materials: 'Uploaded', fee: '$500', students: '25' },
+    { id: '2', name: 'German A1', subtitle: 'Beginner Level Proficiency', displayPosition: 2, staff: 'AI Bot', chapter: '15', duration: '8 Weeks', methods: 'Online FastTrack (Weekend Batch)', materials: 'Pending', fee: '$200', students: '120' }
   ];
   localStorage.setItem('ilas_courses', JSON.stringify(seed));
   return seed;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Edit, RefreshCw, Trash2, Send, CheckSquare, PlusCircle, Clock } from 'lucide-react';
-import { getGlobalServices, setGlobalServices, getGlobalBatches, setGlobalBatches, GlobalService, GlobalBatch } from '../lib/db';
+import { getGlobalPaths, setGlobalPaths, getGlobalBatches, setGlobalBatches, GlobalPath, GlobalBatch } from '../lib/db';
 
 type TabType = 'SERVICE' | 'BATCH';
 
@@ -8,22 +8,22 @@ const ServicesAndBatches: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('SERVICE');
   
   // State for populating forms
-  const [selectedService, setSelectedService] = useState<GlobalService | null>(null);
+  const [selectedService, setSelectedService] = useState<GlobalPath | null>(null);
   const [selectedBatch, setSelectedBatch] = useState<GlobalBatch | null>(null);
 
   const [batchList, setBatchList] = useState<GlobalBatch[]>([]);
-  const [serviceList, setServiceList] = useState<GlobalService[]>([]);
+  const [serviceList, setServiceList] = useState<GlobalPath[]>([]);
 
   useEffect(() => {
     const loadData = () => {
       setBatchList(getGlobalBatches());
-      setServiceList(getGlobalServices());
+      setServiceList(getGlobalPaths());
     };
     loadData();
-    window.addEventListener('ilas-services-changed', loadData);
+    window.addEventListener('ilas-paths-changed', loadData);
     window.addEventListener('ilas-batches-changed', loadData);
     return () => {
-      window.removeEventListener('ilas-services-changed', loadData);
+      window.removeEventListener('ilas-paths-changed', loadData);
       window.removeEventListener('ilas-batches-changed', loadData);
     };
   }, []);
@@ -33,7 +33,7 @@ const ServicesAndBatches: React.FC = () => {
 
   const handleRowClick = (item: any) => {
     if (activeTab === 'SERVICE') {
-      setSelectedService(item as GlobalService);
+      setSelectedService(item as GlobalPath);
     } else {
       setSelectedBatch(item as GlobalBatch);
       setNewTimeSlot('');
@@ -54,7 +54,7 @@ const ServicesAndBatches: React.FC = () => {
     if (confirmation) {
        if (activeTab === 'SERVICE' && selectedService) {
          const updated = serviceList.filter(s => s.id !== selectedService.id);
-         setGlobalServices(updated);
+         setGlobalPaths(updated);
          setSelectedService(null);
        } else if (activeTab === 'BATCH' && selectedBatch) {
          const updated = batchList.filter(b => b.id !== selectedBatch.id);
@@ -67,7 +67,7 @@ const ServicesAndBatches: React.FC = () => {
 
   const handleAddTimeSlot = () => {
     if (!newTimeSlot) return;
-    setSelectedBatch(prev => {
+    setSelectedBatch((prev: GlobalBatch | null) => {
        const batch = prev || { id: 'new', name: '', timings: [], starting: '', remarks: '' };
        return { ...batch, timings: [...batch.timings, newTimeSlot] };
     });
@@ -75,7 +75,7 @@ const ServicesAndBatches: React.FC = () => {
   };
 
   const handleRemoveTimeSlot = (index: number) => {
-    setSelectedBatch(prev => {
+    setSelectedBatch((prev: GlobalBatch | null) => {
        if (!prev) return prev;
        const newTimings = [...prev.timings];
        newTimings.splice(index, 1);
@@ -91,13 +91,13 @@ const ServicesAndBatches: React.FC = () => {
        }
        if (selectedService.id && selectedService.id !== 'new') {
          const updated = serviceList.map(s => s.id === selectedService.id ? selectedService : s);
-         setGlobalServices(updated);
-         alert("Service updated.");
+         setGlobalPaths(updated);
+         alert("Path updated.");
        } else {
          const newService = { ...selectedService, id: Math.random().toString(36).substring(2, 9) };
          const updated = [...serviceList, newService];
-         setGlobalServices(updated);
-         alert("New Service appended to directory.");
+         setGlobalPaths(updated);
+         alert("New Path appended to directory.");
        }
        setSelectedService(null);
     } else {
@@ -128,7 +128,7 @@ const ServicesAndBatches: React.FC = () => {
           onClick={() => { setActiveTab('SERVICE'); setSelectedService(null); }}
           className={`px-4 py-2 font-bold text-sm transition-colors ${activeTab === 'SERVICE' ? 'text-brand-700 border-b-2 border-brand-700' : 'text-slate-500 hover:text-slate-700'}`}
         >
-          Create New Service Path
+          Create New Education Path
         </button>
         <button 
           onClick={() => { setActiveTab('BATCH'); setSelectedBatch(null); setNewTimeSlot(''); }}
@@ -141,7 +141,7 @@ const ServicesAndBatches: React.FC = () => {
       {/* Form Section */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <h2 className="text-xl font-bold text-brand-900 mb-6 border-b border-slate-100 pb-2">
-          {activeTab === 'SERVICE' ? 'Essential Service Path Config' : 'Batch & Time-Slot Config'}
+          {activeTab === 'SERVICE' ? 'Essential Education Path Config' : 'Batch & Time-Slot Config'}
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -150,11 +150,11 @@ const ServicesAndBatches: React.FC = () => {
           {activeTab === 'SERVICE' && (
             <>
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-slate-600">Service / Education Path Name</label>
+                <label className="text-xs font-semibold text-slate-600">Education Path Name</label>
                 <input 
                   type="text" className="border border-slate-300 rounded p-2 text-sm" placeholder="e.g. Premium IELTS Path" 
                   value={selectedService?.name || ''}
-                  onChange={(e) => setSelectedService(prev => prev ? {...prev, name: e.target.value} : { id: 'new', name: e.target.value, methods: '', starting: '', ending: '', remarks: '' })}
+                  onChange={(e) => setSelectedService((prev: GlobalPath | null) => prev ? {...prev, name: e.target.value} : { id: 'new', name: e.target.value, methods: '', starting: '', ending: '', remarks: '' })}
                 />
               </div>
 
@@ -163,7 +163,7 @@ const ServicesAndBatches: React.FC = () => {
                 <input 
                   type="text" className="border border-slate-300 rounded p-2 text-sm" placeholder="e.g. Hybrid, Online" 
                   value={selectedService?.methods || ''}
-                  onChange={(e) => setSelectedService(prev => prev ? {...prev, methods: e.target.value} : { id: 'new', name: '', methods: e.target.value, starting: '', ending: '', remarks: '' })}
+                  onChange={(e) => setSelectedService((prev: GlobalPath | null) => prev ? {...prev, methods: e.target.value} : { id: 'new', name: '', methods: e.target.value, starting: '', ending: '', remarks: '' })}
                 />
               </div>
 
@@ -173,7 +173,7 @@ const ServicesAndBatches: React.FC = () => {
                   <input 
                     type="date" className="border border-slate-300 rounded p-2 text-sm" 
                     value={selectedService?.starting || ''}
-                    onChange={(e) => setSelectedService(prev => prev ? {...prev, starting: e.target.value} : { id: 'new', name: '', methods: '', starting: e.target.value, ending: '', remarks: '' })}
+                    onChange={(e) => setSelectedService((prev: GlobalPath | null) => prev ? {...prev, starting: e.target.value} : { id: 'new', name: '', methods: '', starting: e.target.value, ending: '', remarks: '' })}
                   />
                 </div>
                 <div className="flex flex-col gap-1 flex-1">
@@ -181,7 +181,7 @@ const ServicesAndBatches: React.FC = () => {
                   <input 
                     type="date" className="border border-slate-300 rounded p-2 text-sm" 
                     value={selectedService?.ending || ''}
-                    onChange={(e) => setSelectedService(prev => prev ? {...prev, ending: e.target.value} : { id: 'new', name: '', methods: '', starting: '', ending: e.target.value, remarks: '' })}
+                    onChange={(e) => setSelectedService((prev: GlobalPath | null) => prev ? {...prev, ending: e.target.value} : { id: 'new', name: '', methods: '', starting: '', ending: e.target.value, remarks: '' })}
                   />
                 </div>
               </div>
@@ -191,7 +191,7 @@ const ServicesAndBatches: React.FC = () => {
                 <input 
                   type="text" className="border border-slate-300 rounded p-2 text-sm" placeholder="Full details..." 
                   value={selectedService?.remarks || ''}
-                  onChange={(e) => setSelectedService(prev => prev ? {...prev, remarks: e.target.value} : { id: 'new', name: '', methods: '', starting: '', ending: '', remarks: e.target.value })}
+                  onChange={(e) => setSelectedService((prev: GlobalPath | null) => prev ? {...prev, remarks: e.target.value} : { id: 'new', name: '', methods: '', starting: '', ending: '', remarks: e.target.value })}
                 />
               </div>
             </>
@@ -205,7 +205,7 @@ const ServicesAndBatches: React.FC = () => {
                 <input 
                   type="text" className="border border-slate-300 rounded p-2 text-sm" placeholder="Batch Name" 
                   value={selectedBatch?.name || ''}
-                  onChange={(e) => setSelectedBatch(prev => prev ? {...prev, name: e.target.value} : { id: 'new', name: e.target.value, timings: [], starting: '', remarks: '' })}
+                  onChange={(e) => setSelectedBatch((prev: GlobalBatch | null) => prev ? {...prev, name: e.target.value} : { id: 'new', name: e.target.value, timings: [], starting: '', remarks: '' })}
                 />
               </div>
 
@@ -214,7 +214,7 @@ const ServicesAndBatches: React.FC = () => {
                 <input 
                   type="date" className="border border-slate-300 rounded p-2 text-sm" 
                   value={selectedBatch?.starting || ''}
-                  onChange={(e) => setSelectedBatch(prev => prev ? {...prev, starting: e.target.value} : { id: 'new', name: '', timings: [], starting: e.target.value, remarks: '' })}
+                  onChange={(e) => setSelectedBatch((prev: GlobalBatch | null) => prev ? {...prev, starting: e.target.value} : { id: 'new', name: '', timings: [], starting: e.target.value, remarks: '' })}
                 />
               </div>
 
@@ -254,7 +254,7 @@ const ServicesAndBatches: React.FC = () => {
                 <input 
                   type="text" className="border border-slate-300 rounded p-2 text-sm" placeholder="Details..." 
                   value={selectedBatch?.remarks || ''}
-                  onChange={(e) => setSelectedBatch(prev => prev ? {...prev, remarks: e.target.value} : { id: 'new', name: '', timings: [], starting: '', remarks: e.target.value })}
+                  onChange={(e) => setSelectedBatch((prev: GlobalBatch | null) => prev ? {...prev, remarks: e.target.value} : { id: 'new', name: '', timings: [], starting: '', remarks: e.target.value })}
                 />
               </div>
             </>
@@ -280,7 +280,7 @@ const ServicesAndBatches: React.FC = () => {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 overflow-hidden flex-1">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold text-slate-800">
-            Directory of {activeTab === 'SERVICE' ? 'Services' : 'Batch Slots'} (Click to Edit)
+            Directory of {activeTab === 'SERVICE' ? 'Education Paths' : 'Batch Slots'} (Click to Edit)
           </h2>
         </div>
         

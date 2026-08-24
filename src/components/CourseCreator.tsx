@@ -39,6 +39,8 @@ const CourseCreator: React.FC = () => {
 
   // Form State
   const [courseName, setCourseName] = useState('');
+  const [subtitle, setSubtitle] = useState('');
+  const [displayPosition, setDisplayPosition] = useState(1);
   const [chapters, setChapters] = useState('');
   const [durationVal, setDurationVal] = useState('');
   const [durationType, setDurationType] = useState('Weeks');
@@ -50,6 +52,8 @@ const CourseCreator: React.FC = () => {
   const handleRowClick = (course: GlobalCourse) => {
     setSelectedCourse(course);
     setCourseName(course.name);
+    setSubtitle(course.subtitle || '');
+    setDisplayPosition(course.displayPosition || 1);
     setChapters(course.chapter);
     setDurationVal(course.duration.split(' ')[0]);
     setDurationType(course.duration.split(' ')[1] || 'Weeks');
@@ -60,6 +64,8 @@ const CourseCreator: React.FC = () => {
   const handleReset = () => {
     setSelectedCourse(null);
     setCourseName('');
+    setSubtitle('');
+    setDisplayPosition(1);
     setChapters('');
     setDurationVal('');
     setDurationType('Weeks');
@@ -93,6 +99,8 @@ const CourseCreator: React.FC = () => {
     const newCourse: GlobalCourse = {
       id: selectedCourse?.id || Math.random().toString(36).substr(2, 9),
       name: courseName,
+      subtitle: subtitle,
+      displayPosition: displayPosition,
       staff: staff,
       chapter: chapters,
       duration: `${durationVal} ${durationType}`,
@@ -134,11 +142,25 @@ const CourseCreator: React.FC = () => {
             
             <div className="flex items-end gap-2">
               <div className="flex-1 flex flex-col gap-1">
-                <label className="text-xs font-semibold text-slate-600">COURSE TILE</label>
+                <label className="text-xs font-semibold text-slate-600">COURSE TITLE</label>
                 <div className="relative">
                   <BookOpen className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input type="text" value={courseName} onChange={(e) => setCourseName(e.target.value)} className="w-full border border-slate-300 rounded p-2 pl-9 text-sm focus:ring-1 focus:ring-brand-500" placeholder="e.g. SAP Training" />
                 </div>
+              </div>
+            </div>
+
+            <div className="flex items-end gap-2">
+              <div className="flex-1 flex flex-col gap-1">
+                <label className="text-xs font-semibold text-slate-600">SUBTITLE</label>
+                <input type="text" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-1 focus:ring-brand-500" placeholder="e.g. Beginner Level Proficiency" />
+              </div>
+            </div>
+
+            <div className="flex items-end gap-2">
+              <div className="flex-1 flex flex-col gap-1">
+                <label className="text-xs font-semibold text-slate-600">DISPLAY POSITION (INDEX)</label>
+                <input type="number" value={displayPosition} onChange={(e) => setDisplayPosition(Number(e.target.value))} className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-1 focus:ring-brand-500" placeholder="e.g. 1" />
               </div>
             </div>
 
