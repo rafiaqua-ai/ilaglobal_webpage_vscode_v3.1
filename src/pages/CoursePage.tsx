@@ -227,7 +227,7 @@ const CoursePathTile = ({
         </button>
         <button onClick={() => window.dispatchEvent(new CustomEvent('open-language-trainer'))} className="w-full py-3 bg-white border-2 border-slate-200 hover:border-brand-300 text-slate-700 hover:text-brand-700 font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
           <Play className="w-4 h-4" />
-          Watch Free Trial
+          Watch Course Demo
         </button>
       </div>
     </div>
@@ -392,7 +392,7 @@ export default function CoursePage({ courseTitle: initialTitle = "German Languag
               </button>
               <button onClick={() => window.dispatchEvent(new CustomEvent('open-language-trainer'))} className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md rounded-xl font-bold text-sm transition-all flex items-center gap-2 cursor-pointer">
                 <Play className="w-4 h-4" />
-                <span>Free Trial Demo</span>
+                <span>Course Demo</span>
               </button>
             </div>
           </div>

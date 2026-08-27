@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { 
   Shield, Users, BarChart2, 
-  Building, UserPlus, Maximize2, Minimize2, Activity, Settings, LogOut, Globe, Lock, Unlock, Award, Briefcase, GraduationCap, Plane, FileText, Key, ShieldCheck, DollarSign, Megaphone, Ticket, Building2
+  Building, UserPlus, Maximize2, Minimize2, Activity, Settings, LogOut, Globe, Lock, Unlock, Award, Briefcase, GraduationCap, Plane, FileText, Key, ShieldCheck, DollarSign, Megaphone, Ticket, Building2, Trophy, Bot, Gift
 } from 'lucide-react';
 import { getInquiries, getVisitorLogs, getVisitorStats, Inquiry } from '../lib/db';
 import FinanceCommissionHub from '../components/admin/FinanceCommissionHub';
 import HRConsultantHub from '../components/admin/HRConsultantHub';
 import MarketingStudioHub from '../components/admin/MarketingStudioHub';
 import IlasActivityHub from '../components/admin/IlasActivityHub';
+import RewardPlanHub from '../components/admin/RewardPlanHub';
 import SettingsHub from '../components/admin/SettingsHub';
 import ExecutiveOverviewHub from '../components/admin/ExecutiveOverviewHub';
 import GMConsole from '../components/admin/GMConsole';
@@ -45,11 +46,11 @@ export default function AdminPortal() {
 
   // Allowed Tabs Config
   const allowedTabs: Record<string, string[]> = {
-    'Super Admin': ['all_inquiries', 'walkin_intake', 'online_enquiry', 'super_admin_hub', 'overview', 'gm', 'education', 'study_abroad', 'visa', 'work_while_you_study', 'jobs', 'rewards', 'leads', 'analytics', 'marketing_analytics', 'sales', 'hr', 'finance', 'marketing', 'activity', 'it_admin', 'settings'],
-    'CEO': ['all_inquiries', 'walkin_intake', 'online_enquiry', 'overview', 'gm', 'education', 'study_abroad', 'visa', 'work_while_you_study', 'jobs', 'rewards', 'leads', 'analytics', 'marketing_analytics', 'sales', 'hr', 'finance', 'marketing', 'activity', 'it_admin', 'settings'],
-    'General Manager': ['all_inquiries', 'walkin_intake', 'online_enquiry', 'gm', 'overview', 'education', 'study_abroad', 'visa', 'work_while_you_study', 'jobs', 'rewards', 'leads', 'analytics', 'marketing_analytics', 'sales', 'hr', 'finance', 'marketing', 'activity', 'it_admin', 'settings'],
+    'Super Admin': ['all_inquiries', 'walkin_intake', 'online_enquiry', 'super_admin_hub', 'overview', 'gm', 'rewards', 'education', 'study_abroad', 'visa', 'work_while_you_study', 'jobs', 'leads', 'analytics', 'marketing_analytics', 'sales', 'hr', 'finance', 'marketing', 'activity', 'it_admin', 'settings'],
+    'CEO': ['all_inquiries', 'walkin_intake', 'online_enquiry', 'overview', 'gm', 'rewards', 'education', 'study_abroad', 'visa', 'work_while_you_study', 'jobs', 'leads', 'analytics', 'marketing_analytics', 'sales', 'hr', 'finance', 'marketing', 'activity', 'it_admin', 'settings'],
+    'General Manager': ['all_inquiries', 'walkin_intake', 'online_enquiry', 'gm', 'overview', 'rewards', 'education', 'study_abroad', 'visa', 'work_while_you_study', 'jobs', 'leads', 'analytics', 'marketing_analytics', 'sales', 'hr', 'finance', 'marketing', 'activity', 'it_admin', 'settings'],
     'Tech Admin': ['super_admin_hub', 'overview', 'gm', 'marketing_analytics', 'activity', 'it_admin', 'settings'],
-    'Finance Officer': ['all_inquiries', 'sales', 'finance'],
+    'Finance Officer': ['all_inquiries', 'sales', 'finance', 'rewards'],
     'HR Manager': ['all_inquiries', 'hr', 'work_while_you_study'],
     'Marketing Exec': ['online_enquiry', 'marketing', 'marketing_analytics', 'rewards'],
     'Academic Counselor': ['all_inquiries', 'walkin_intake', 'online_enquiry', 'education', 'leads', 'activity']
@@ -236,7 +237,7 @@ export default function AdminPortal() {
                 👑 Super Admin Master
               </button>
               <button onClick={() => setActiveTab('overview')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'overview' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
-                <BarChart2 className="w-3.5 h-3.5" /> Executive Overview
+                <BarChart2 className="w-3.5 h-3.5" /> Master Executive Overview
               </button>
               <button onClick={() => setActiveTab('gm')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'gm' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
                 <Settings className="w-3.5 h-3.5" /> GM Console
@@ -252,13 +253,16 @@ export default function AdminPortal() {
                 <Users className="w-3.5 h-3.5" /> HR Suite
               </button>
               <button onClick={() => setActiveTab('finance')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'finance' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
-                <DollarSign className="w-3.5 h-3.5" /> Finance Hub
+                <DollarSign className="w-3.5 h-3.5" /> Finance & Accounts Hub
               </button>
               <button onClick={() => setActiveTab('marketing')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'marketing' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
                 <Megaphone className="w-3.5 h-3.5" /> Marketing Studio
               </button>
               <button onClick={() => setActiveTab('marketing_analytics')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'marketing_analytics' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
                 <BarChart2 className="w-3.5 h-3.5" /> Marketing Analyst
+              </button>
+              <button onClick={() => setActiveTab('rewards')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'rewards' ? 'bg-amber-500 text-slate-950 font-black' : 'hover:bg-slate-50 text-slate-700'}`}>
+                <Gift className="w-3.5 h-3.5 text-amber-500" /> Reward Plan & Referrals
               </button>
             </div>
           </div>
@@ -268,19 +272,19 @@ export default function AdminPortal() {
             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Products & Execution</h4>
             <div className="space-y-1">
               <button onClick={() => setActiveTab('education')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'education' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
-                <GraduationCap className="w-3.5 h-3.5" /> Education Hub
-              </button>
-              <button onClick={() => setActiveTab('study_abroad')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'study_abroad' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
-                <Plane className="w-3.5 h-3.5" /> Study Abroad
-              </button>
-              <button onClick={() => setActiveTab('visa')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'visa' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
-                <FileText className="w-3.5 h-3.5" /> Visa Processing
+                <GraduationCap className="w-3.5 h-3.5" /> All Courses Hub
               </button>
               <button onClick={() => setActiveTab('work_while_you_study')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'work_while_you_study' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
-                <Briefcase className="w-3.5 h-3.5" /> Work While You Study
+                <Briefcase className="w-3.5 h-3.5" /> Work and Study Hub
+              </button>
+              <button onClick={() => setActiveTab('study_abroad')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'study_abroad' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
+                <Plane className="w-3.5 h-3.5" /> Study Abroad Hub
+              </button>
+              <button onClick={() => setActiveTab('visa')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'visa' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
+                <FileText className="w-3.5 h-3.5" /> Visa and Service Hub
               </button>
               <button onClick={() => setActiveTab('jobs')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'jobs' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
-                <Award className="w-3.5 h-3.5" /> Jobs & Career
+                <Award className="w-3.5 h-3.5" /> Job and Career Hub
               </button>
             </div>
           </div>
@@ -299,7 +303,7 @@ export default function AdminPortal() {
                 <ShieldCheck className="w-3.5 h-3.5" /> IT & Security
               </button>
               <button onClick={() => setActiveTab('activity')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'activity' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
-                <Activity className="w-3.5 h-3.5" /> ILA Monitor
+                <Activity className="w-3.5 h-3.5" /> ILAS System Monitor
               </button>
               <button onClick={() => setActiveTab('settings')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'settings' ? 'bg-amber-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
                 <Settings className="w-3.5 h-3.5" /> Settings & Staff
@@ -372,33 +376,33 @@ export default function AdminPortal() {
           {activeTab === 'finance' && <><FinanceCommissionHub /><ContentCreationTool departmentName="Finance Hub" /></>}
           {activeTab === 'marketing' && <><MarketingStudioHub /><ContentCreationTool departmentName="Marketing Studio" /></>}
 
-          {/* EDUCATION & TRAINING DEPARTMENT */}
+          {/* ALL COURSES HUB */}
           {activeTab === 'education' && (
             <div className="space-y-6">
               <EducationHub />
               <DepartmentInquiryView 
                 departmentName="Education" 
-                title="Education & Language Candidate Intake Desk" 
+                title="All Courses Hub Candidate Intake Desk" 
                 subtitle="Track walk-in intakes, language batches, and classroom enrollment passes."
               />
-              <ContentCreationTool departmentName="Education Hub" />
+              <ContentCreationTool departmentName="All Courses Hub" />
             </div>
           )}
 
-          {/* STUDY ABROAD DEPARTMENT */}
+          {/* STUDY ABROAD HUB */}
           {activeTab === 'study_abroad' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center border-b pb-4">
                 <div>
                   <span className="text-[10px] font-black uppercase bg-brand-50 text-brand-700 px-2.5 py-1 rounded">Department Hub</span>
-                  <h2 className="text-xl font-black text-slate-900 mt-1">Study Abroad & University Placement</h2>
+                  <h2 className="text-xl font-black text-slate-900 mt-1">Study Abroad Hub & University Placement</h2>
                 </div>
                 <span className="text-xs font-bold text-slate-500">Global University Contracts & Admissions</span>
               </div>
               
               <DepartmentInquiryView 
                 departmentName="Study Abroad" 
-                title="Study Abroad Candidate Pipeline" 
+                title="Study Abroad Hub Candidate Pipeline" 
                 subtitle="University applications, APS certificate verifications, and admission offer letters."
               />
 
@@ -406,34 +410,34 @@ export default function AdminPortal() {
                 <div className="p-5 bg-slate-50 border rounded-2xl space-y-2">
                   <div className="font-black text-slate-900">🏛️ University Directory</div>
                   <p className="text-slate-500">Input partner institutions across Germany and EU territories.</p>
-                  <button disabled={!isAuthorizedToEdit} className="px-3 py-1.5 bg-brand-600 text-white rounded-lg font-bold disabled:opacity-50">Add Institution</button>
+                  <button disabled={!isAuthorizedToEdit} className="px-3 py-1.5 bg-brand-600 text-white rounded-lg font-bold disabled:opacity-50 cursor-pointer">Add Institution</button>
                 </div>
                 <div className="p-5 bg-slate-50 border rounded-2xl space-y-2">
                   <div className="font-black text-slate-900">📄 Dossier & Checklist Control</div>
                   <p className="text-slate-500">Manage checklist items before forwarding candidates to Visa dept.</p>
-                  <button disabled={!isAuthorizedToEdit} className="px-3 py-1.5 bg-brand-600 text-white rounded-lg font-bold disabled:opacity-50">Verify Checklists</button>
+                  <button disabled={!isAuthorizedToEdit} className="px-3 py-1.5 bg-brand-600 text-white rounded-lg font-bold disabled:opacity-50 cursor-pointer">Verify Checklists</button>
                 </div>
               </div>
-              <ContentCreationTool departmentName="Study Abroad" />
-              <DepartmentApprovalsTab departmentName="Study Abroad" />
-              <DepartmentUpdatesTab departmentName="Study Abroad" />
+              <ContentCreationTool departmentName="Study Abroad Hub" />
+              <DepartmentApprovalsTab departmentName="Study Abroad Hub" />
+              <DepartmentUpdatesTab departmentName="Study Abroad Hub" />
             </div>
           )}
 
-          {/* VISA DEPARTMENT */}
+          {/* VISA AND SERVICE HUB */}
           {activeTab === 'visa' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center border-b pb-4">
                 <div>
                   <span className="text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded">Department Hub</span>
-                  <h2 className="text-xl font-black text-slate-900 mt-1">Visa Processing & Compliance</h2>
+                  <h2 className="text-xl font-black text-slate-900 mt-1">Visa and Service Hub & Immigration Compliance</h2>
                 </div>
-                <span className="text-xs font-bold text-slate-500">Embassy Paperwork & Blocked Accounts</span>
+                <span className="text-xs font-bold text-slate-500">Embassy Paperwork, Blocked Accounts & Verification</span>
               </div>
 
               <DepartmentInquiryView 
                 departmentName="Visa" 
-                title="Visa & Immigration Candidate Pipeline" 
+                title="Visa and Service Hub Candidate Pipeline" 
                 subtitle="Embassy appointment queues, blocked account (€11,900) proofs, and APS clearance."
               />
 
@@ -441,66 +445,78 @@ export default function AdminPortal() {
                 <div className="p-5 bg-slate-50 border rounded-2xl space-y-2">
                   <div className="font-black text-slate-900">🛂 Consulate Slot Queue</div>
                   <p className="text-slate-500">Track VFS appointment schedules and document verification status.</p>
-                  <button disabled={!isAuthorizedToEdit} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold disabled:opacity-50">Manage Slots</button>
+                  <button disabled={!isAuthorizedToEdit} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold disabled:opacity-50 cursor-pointer">Manage Slots</button>
                 </div>
                 <div className="p-5 bg-slate-50 border rounded-2xl space-y-2">
                   <div className="font-black text-slate-900">⚖️ Regulatory Checklists</div>
                   <p className="text-slate-500">Update German immigration rules and financial proof guidelines.</p>
-                  <button disabled={!isAuthorizedToEdit} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold disabled:opacity-50">Update Rules</button>
+                  <button disabled={!isAuthorizedToEdit} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold disabled:opacity-50 cursor-pointer">Update Rules</button>
                 </div>
               </div>
-              <ContentCreationTool departmentName="Visa Processing" />
-              <DepartmentApprovalsTab departmentName="Visa Processing" />
-              <DepartmentUpdatesTab departmentName="Visa Processing" />
+              <ContentCreationTool departmentName="Visa and Service Hub" />
+              <DepartmentApprovalsTab departmentName="Visa and Service Hub" />
+              <DepartmentUpdatesTab departmentName="Visa and Service Hub" />
             </div>
           )}
 
+          {/* WORK AND STUDY HUB */}
           {activeTab === 'work_while_you_study' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center border-b pb-4">
                 <div>
                   <span className="text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded">Department Hub</span>
-                  <h2 className="text-xl font-black text-slate-900 mt-1">Work While You Study (Ausbildung) Operations</h2>
+                  <h2 className="text-xl font-black text-slate-900 mt-1">Work and Study Hub (Ausbildung & Dual System) Operations</h2>
                 </div>
                 <span className="text-xs font-bold text-slate-500">Dual-System Contracts & Corporate Stipends</span>
               </div>
 
               <DepartmentInquiryView 
                 departmentName="Work While You Study" 
-                title="Ausbildung & Dual Apprenticeship Pipeline" 
+                title="Work and Study Hub / Dual Apprenticeship Pipeline" 
                 subtitle="Match candidates with German employers for €1,200/mo stipend contracts."
               />
 
-              <ContentCreationTool departmentName="Work While You Study" />
-              <DepartmentApprovalsTab departmentName="Work While You Study" />
-              <DepartmentUpdatesTab departmentName="Work While You Study" />
+              <ContentCreationTool departmentName="Work and Study Hub" />
+              <DepartmentApprovalsTab departmentName="Work and Study Hub" />
+              <DepartmentUpdatesTab departmentName="Work and Study Hub" />
             </div>
           )}
 
+          {/* JOB AND CAREER HUB */}
           {activeTab === 'jobs' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center border-b pb-4">
                 <div>
                   <span className="text-[10px] font-black uppercase bg-brand-50 text-brand-700 px-2.5 py-1 rounded">Department Hub</span>
-                  <h2 className="text-xl font-black text-slate-900 mt-1">Jobs & Career Search Engine</h2>
+                  <h2 className="text-xl font-black text-slate-900 mt-1">Job and Career Hub Placement Engine</h2>
                 </div>
                 <span className="text-xs font-bold text-slate-500">European Employer Match & Placement</span>
               </div>
 
               <DepartmentInquiryView 
                 departmentName="Jobs" 
-                title="Corporate Career Candidates & Placements" 
+                title="Job and Career Hub Candidates & Placements" 
                 subtitle="Healthcare, IT, and Engineering candidate CVs and employer interview schedules."
               />
 
-              <ContentCreationTool departmentName="Jobs & Careers" />
-              <DepartmentApprovalsTab departmentName="Jobs & Career" />
-              <DepartmentUpdatesTab departmentName="Jobs & Career" />
+              <ContentCreationTool departmentName="Job and Career Hub" />
+              <DepartmentApprovalsTab departmentName="Job and Career Hub" />
+              <DepartmentUpdatesTab departmentName="Job and Career Hub" />
+            </div>
+          )}
+
+          {/* REWARDS PLAN HUB (Core Operations & Accounts-Marketing Synergy) */}
+          {activeTab === 'rewards' && (
+            <div className="space-y-6">
+              <RewardPlanHub />
+              <ContentCreationTool departmentName="Reward Plan & Commission Engine" />
+              <DepartmentApprovalsTab departmentName="Rewards & Commissions" />
+              <DepartmentUpdatesTab departmentName="Rewards & Commissions" />
             </div>
           )}
 
           {activeTab === 'sales' && <div><div className="text-xs font-bold text-slate-600 mb-4">Sales & POS Hub Management</div><ContentCreationTool departmentName="Sales Hub" /><DepartmentApprovalsTab departmentName="Sales" /><DepartmentUpdatesTab departmentName="Sales" /></div>}
-          {activeTab === 'activity' && <><IlasActivityHub /><ContentCreationTool departmentName="ILA Monitor" /><DepartmentUpdatesTab departmentName="ILA Monitor" /></>}
+          {activeTab === 'activity' && <><IlasActivityHub /><ContentCreationTool departmentName="ILAS Companion & Monitor" /><DepartmentUpdatesTab departmentName="ILAS Companion" /></>}
           {activeTab === 'it_admin' && <><ITAdminConsole /><ContentCreationTool departmentName="IT & Security" /><DepartmentApprovalsTab departmentName="IT" /><DepartmentUpdatesTab departmentName="IT" /></>}
           {activeTab === 'marketing_analytics' && <><ITMarketingAnalyticsDashboard /><ContentCreationTool departmentName="Marketing Analyst" /><DepartmentApprovalsTab departmentName="Marketing Analyst" /><DepartmentUpdatesTab departmentName="Marketing Analyst" /></>}
           {activeTab === 'settings' && <><SettingsHub /><ContentCreationTool departmentName="Settings" /><DepartmentUpdatesTab departmentName="Settings" /></>}

@@ -127,6 +127,7 @@ export interface GlobalPath {
   name: string;
   code?: string;
   methods: string;
+  position?: number;
   starting: string;
   ending: string;
   remarks: string;
@@ -237,6 +238,7 @@ export interface GlobalCourse {
   subtitle: string;
   show_in_sub_nav?: boolean;
   displayPosition: number;
+  viewType?: 'Main View' | 'Blocks View' | 'Both';
   staff: string;
   chapter: string;
   duration: string;
@@ -486,7 +488,13 @@ const SEED_ATTENDANCE: AttendanceLog[] = [
 // DB Retrieval & Save Functions
 export const getGlobalCategories = (): GlobalCategory[] => {
   const data = localStorage.getItem('ilas_categories');
-  if (data) return JSON.parse(data);
+  if (data) {
+    try {
+      return JSON.parse(data);
+    } catch (e) {
+      console.warn('Failed to parse ilas_categories from localStorage, resetting to seed:', e);
+    }
+  }
   const seed: GlobalCategory[] = [
     {
       id: 'cat-1',
@@ -535,30 +543,65 @@ export const setGlobalCategories = (categories: GlobalCategory[]) => {
 
 export const getGlobalPaths = (): GlobalPath[] => {
   const data = localStorage.getItem('ilas_paths');
-  if (data) return JSON.parse(data);
+  if (data) {
+    try {
+      const parsed: GlobalPath[] = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.some(p => p.name.includes('Path 1 Test'))) {
+        return parsed.sort((a, b) => (a.position || 99) - (b.position || 99));
+      }
+    } catch (e) {
+      console.warn('Failed to parse ilas_paths from localStorage, resetting to seed:', e);
+    }
+  }
   const seed: GlobalPath[] = [
-    { id: '1', name: 'Intelli-Coach AI Path', methods: 'AI + Adaptive Tutoring', starting: '2026-10-12', ending: '2026-12-12', remarks: '24/7 Intelligent Pacing', linkedCourseId: '1', linkedCourseName: 'German Language A1–C2' },
-    { id: '2', name: 'Online FastTrack Video + AI', methods: 'Video + AI Labs', starting: '2026-10-15', ending: '2026-11-15', remarks: 'Self-paced with weekly assessments', linkedCourseId: '2', linkedCourseName: 'IELTS & English Proficiency' },
-    { id: '3', name: 'Live Enterprise Cohort', methods: 'Live Instructor + Mentoring', starting: '2026-10-20', ending: '2027-01-20', remarks: 'Weekend interactive cohorts', linkedCourseId: '3', linkedCourseName: 'Software Engineering' },
-    { id: '4', name: 'Corporate Hands-On Lab', methods: 'Enterprise Practical Simulation', starting: '2026-11-01', ending: '2026-12-01', remarks: 'Industry Certification Track', linkedCourseId: '4', linkedCourseName: 'SAP ERP Fundamentals' }
+    // Paths for Course 1: German Language Test 1
+    { id: 'p1-1', name: 'Path 1 Test - Intelli-Coach AI Adaptive Path', methods: 'AI + Adaptive Tutoring & Real-time Accent Coach', position: 1, starting: '2026-10-12', ending: '2026-12-12', remarks: '24/7 Intelligent Pacing', linkedCourseId: '1', linkedCourseName: 'German Language Test 1' },
+    { id: 'p1-2', name: 'Path 2 Test - Interactive Video Labs & Workbooks', methods: 'Video Masterclass + Grammar Architecture Practice', position: 2, starting: '2026-10-15', ending: '2026-11-15', remarks: 'Self-paced with weekly assessments', linkedCourseId: '1', linkedCourseName: 'German Language Test 1' },
+    { id: 'p1-3', name: 'Path 3 Test - Live Native Mentor Cohort', methods: 'Live Instructor 1-on-1 Dialogue & Mock Exam Simulation', position: 3, starting: '2026-10-20', ending: '2027-01-20', remarks: 'Weekend interactive cohorts', linkedCourseId: '1', linkedCourseName: 'German Language Test 1' },
+    { id: 'p1-4', name: 'Path 4 Test - Clinical & Technical German Track', methods: 'Healthcare & Engineering Specialized Vocabulary', position: 4, starting: '2026-11-01', ending: '2027-02-01', remarks: 'Hospital / Industry Readiness', linkedCourseId: '1', linkedCourseName: 'German Language Test 1' },
+
+    // Paths for Course 2: IELTS Test 2
+    { id: 'p2-1', name: 'Path 1 Test - Band 8.5+ Strategy Masterclass', methods: 'Cambridge Official Framework + Timed Reading Drills', position: 1, starting: '2026-10-15', ending: '2026-11-30', remarks: 'High Band Target', linkedCourseId: '2', linkedCourseName: 'IELTS Test 2' },
+    { id: 'p2-2', name: 'Path 2 Test - AI Essay & Writing Evaluation Clinic', methods: 'Automated Lexical & Grammar Scoring Engine', position: 2, starting: '2026-10-18', ending: '2026-11-20', remarks: 'Task 1 & Task 2 Mastery', linkedCourseId: '2', linkedCourseName: 'IELTS Test 2' },
+    { id: 'p2-3', name: 'Path 3 Test - Live 1-on-1 Mock Speaking Panel', methods: 'Certified Cambridge Native Examiner Mock Sessions', position: 3, starting: '2026-10-25', ending: '2026-12-15', remarks: 'Speaking Confidence Booster', linkedCourseId: '2', linkedCourseName: 'IELTS Test 2' },
+    { id: 'p2-4', name: 'Path 4 Test - FastTrack 30-Day Intensive Lab', methods: 'Daily Speed-Drills & High-Conversion Templates', position: 4, starting: '2026-11-01', ending: '2026-12-01', remarks: 'Fast Assessment', linkedCourseId: '2', linkedCourseName: 'IELTS Test 2' },
+
+    // Paths for Course 3: Software Test 3
+    { id: 'p3-1', name: 'Path 1 Test - Full-Stack React 19 & TypeScript', methods: 'Frontend Engineering & Enterprise Design Systems', position: 1, starting: '2026-10-20', ending: '2027-01-20', remarks: 'Modern Production Stack', linkedCourseId: '3', linkedCourseName: 'Software Test 3' },
+    { id: 'p3-2', name: 'Path 2 Test - Node.js, Express & Cloud Microservices', methods: 'Backend Architecture, PostgreSQL & REST APIs', position: 2, starting: '2026-10-25', ending: '2027-02-10', remarks: 'Scalable Systems', linkedCourseId: '3', linkedCourseName: 'Software Test 3' },
+    { id: 'p3-3', name: 'Path 3 Test - DevOps, Docker, CI/CD & Cloud Deploy', methods: 'Automated Pipelines & Cloud Infrastructure Lab', position: 3, starting: '2026-11-01', ending: '2027-02-28', remarks: 'Direct Job Deployment', linkedCourseId: '3', linkedCourseName: 'Software Test 3' },
+    { id: 'p3-4', name: 'Path 4 Test - Enterprise AI Pair-Programming Lab', methods: 'AI Copilots, Refactoring & Code Quality Systems', position: 4, starting: '2026-11-15', ending: '2027-03-01', remarks: 'Cutting-Edge Tools', linkedCourseId: '3', linkedCourseName: 'Software Test 3' },
+
+    // Paths for Course 4: SAP Course Test 4
+    { id: 'p4-1', name: 'Path 1 Test - SAP FICO Financial Accounting Simulation', methods: 'General Ledger, Accounts Payable/Receivable & Asset Mgt', position: 1, starting: '2026-11-01', ending: '2027-01-15', remarks: 'Enterprise Hands-On Lab', linkedCourseId: '4', linkedCourseName: 'SAP Course Test 4' },
+    { id: 'p4-2', name: 'Path 2 Test - SAP MM/SD Supply Chain Logistics', methods: 'Procurement, Inventory Management & Sales Order Workflows', position: 2, starting: '2026-11-05', ending: '2027-01-20', remarks: 'Supply Chain Operations', linkedCourseId: '4', linkedCourseName: 'SAP Course Test 4' },
+    { id: 'p4-3', name: 'Path 3 Test - SAP S/4HANA Cloud Integration & Reporting', methods: 'Universal Journal & Real-Time Enterprise Analytics', position: 3, starting: '2026-11-10', ending: '2027-02-05', remarks: 'S/4HANA Migration Lab', linkedCourseId: '4', linkedCourseName: 'SAP Course Test 4' },
+    { id: 'p4-4', name: 'Path 4 Test - Corporate Practical Certification Lab', methods: 'Live Enterprise Sandbox & Case-Study Audits', position: 4, starting: '2026-11-20', ending: '2027-02-15', remarks: 'Certified SAP Practice', linkedCourseId: '4', linkedCourseName: 'SAP Course Test 4' }
   ];
   localStorage.setItem('ilas_paths', JSON.stringify(seed));
-  return seed;
+  return seed.sort((a, b) => (a.position || 99) - (b.position || 99));
 };
 
 export const setGlobalPaths = (paths: GlobalPath[]) => {
-  localStorage.setItem('ilas_paths', JSON.stringify(paths));
+  const sorted = [...paths].sort((a, b) => (a.position || 99) - (b.position || 99));
+  localStorage.setItem('ilas_paths', JSON.stringify(sorted));
   window.dispatchEvent(new CustomEvent('ilas-paths-changed'));
 };
 
 export const getGlobalBatches = (): GlobalBatch[] => {
   const data = localStorage.getItem('ilas_batches');
-  if (data) return JSON.parse(data);
+  if (data) {
+    try {
+      return JSON.parse(data);
+    } catch (e) {
+      console.warn('Failed to parse ilas_batches from localStorage, resetting to seed:', e);
+    }
+  }
   const seed: GlobalBatch[] = [
-    { id: '1', name: 'Morning Batch A1', timings: ['09:00 - 11:00', '11:30 - 13:30'], starting: '2026-10-12', remarks: 'Fast Filling', linkedCourseId: '1', linkedCourseName: 'German Language A1–C2', linkedPathId: '1', linkedPathName: 'Intelli-Coach AI Path' },
-    { id: '2', name: 'Evening Intensive Batch', timings: ['18:00 - 20:00'], starting: '2026-10-15', remarks: 'Open for Registration', linkedCourseId: '2', linkedCourseName: 'IELTS & English Proficiency', linkedPathId: '2', linkedPathName: 'Online FastTrack Video + AI' },
-    { id: '3', name: 'Weekend Tech Bootcamp', timings: ['14:00 - 18:00 (Sat-Sun)'], starting: '2026-10-20', remarks: 'Available', linkedCourseId: '3', linkedCourseName: 'Software Engineering', linkedPathId: '3', linkedPathName: 'Live Enterprise Cohort' },
-    { id: '4', name: 'Weekday Corporate Slot', timings: ['10:00 - 12:00'], starting: '2026-11-01', remarks: 'Enterprise Direct', linkedCourseId: '4', linkedCourseName: 'SAP ERP Fundamentals', linkedPathId: '4', linkedPathName: 'Corporate Hands-On Lab' }
+    { id: '1', name: 'Morning Batch A1', timings: ['09:00 - 11:00', '11:30 - 13:30'], starting: '2026-10-12', remarks: 'Fast Filling', linkedCourseId: '1', linkedCourseName: 'German Language Test 1', linkedPathId: 'p1-1', linkedPathName: 'Path 1 Test - Intelli-Coach AI Adaptive Path' },
+    { id: '2', name: 'Evening Intensive Batch', timings: ['18:00 - 20:00'], starting: '2026-10-15', remarks: 'Open for Registration', linkedCourseId: '2', linkedCourseName: 'IELTS Test 2', linkedPathId: 'p2-1', linkedPathName: 'Path 1 Test - Band 8.5+ Strategy Masterclass' },
+    { id: '3', name: 'Weekend Tech Bootcamp', timings: ['14:00 - 18:00 (Sat-Sun)'], starting: '2026-10-20', remarks: 'Available', linkedCourseId: '3', linkedCourseName: 'Software Test 3', linkedPathId: 'p3-1', linkedPathName: 'Path 1 Test - Full-Stack React 19 & TypeScript' },
+    { id: '4', name: 'Weekday Corporate Slot', timings: ['10:00 - 12:00'], starting: '2026-11-01', remarks: 'Enterprise Direct', linkedCourseId: '4', linkedCourseName: 'SAP Course Test 4', linkedPathId: 'p4-1', linkedPathName: 'Path 1 Test - SAP FICO Financial Accounting Simulation' }
   ];
   localStorage.setItem('ilas_batches', JSON.stringify(seed));
   return seed;
@@ -572,116 +615,124 @@ export const setGlobalBatches = (batches: GlobalBatch[]) => {
 export const getGlobalCourses = (): GlobalCourse[] => {
   const data = localStorage.getItem('ilas_courses');
   if (data) {
-    const parsed: GlobalCourse[] = JSON.parse(data);
-    return parsed.sort((a, b) => (a.displayPosition || 99) - (b.displayPosition || 99));
+    try {
+      const parsed: GlobalCourse[] = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.some(c => c.name === 'German Language Test 1')) {
+        return parsed.sort((a, b) => (a.displayPosition || 99) - (b.displayPosition || 99));
+      }
+    } catch (e) {
+      console.warn('Failed to parse ilas_courses from localStorage, resetting to seed:', e);
+    }
   }
   const seed: GlobalCourse[] = [
     { 
       id: '1', 
-      name: 'German Language A1–C2', 
+      name: 'German Language Test 1', 
       top_title: 'German Language & Proficiency', 
       subtitle: 'Goethe & Telc Standard Certification Pathways with Clinical & Technical German', 
       show_in_sub_nav: true, 
       displayPosition: 1, 
+      viewType: 'Main View',
       staff: 'Nadeem - ID 091 (Senior German Specialist)', 
       chapter: '24', 
       duration: '16 Weeks', 
-      methods: 'Intelli-Coach AI Path [AI + Adaptive Tutoring]', 
-      pathId: '1', 
-      pathName: 'Intelli-Coach AI Path', 
+      methods: 'Path 1 Test - Intelli-Coach AI Adaptive Path [AI + Adaptive Tutoring]', 
+      pathId: 'p1-1', 
+      pathName: 'Path 1 Test - Intelli-Coach AI Adaptive Path', 
       batchId: '1', 
       batchName: 'Morning Batch A1', 
       materials: 'Digital Library & Goethe Workbooks', 
       fee: '$199', 
       students: '180', 
-      category: 'German Language',
+      category: 'Education & Languages',
+      subCategory: 'German Language (A1–C2)',
       libraryType: 'TUTOR',
       enrolledStudentsList: [
         { id: 's1', name: 'Ananya Sharma', email: 'ananya.sharma@gmail.com', status: 'In Class', joinedAt: '09:00 AM', attendanceScore: 98 },
-        { id: 's2', name: 'Lukas Meyer', email: 'lukas.m@tum.de', status: 'Present', joinedAt: '09:05 AM', attendanceScore: 95 },
-        { id: 's3', name: 'Priya Kapoor', email: 'priya.k99@gmail.com', status: 'In Class', joinedAt: '09:01 AM', attendanceScore: 92 },
-        { id: 's4', name: 'Stefan Weber', email: 'stefan.weber@charite.de', status: 'Invited', joinedAt: 'Pending', attendanceScore: 88 }
+        { id: 's2', name: 'Lukas Meyer', email: 'lukas.m@tum.de', status: 'Present', joinedAt: '09:05 AM', attendanceScore: 95 }
       ],
-      courseStructure: 'A1: Basics, Phonetics & Survival German\nA2: Routine Interactions & Workplace Basics\nB1: Fluent Communication & Email Drafting\nB2: Professional & Clinical Technical Vocabulary\nMock Exam Simulations & Goethe Readiness' 
+      courseStructure: 'Module 1: CEFR A1 Fundamentals, Phonetics & Survival Vocabulary\nModule 2: CEFR A2 Daily Conversational & Workplace Dialogues\nModule 3: CEFR B1 Complex Sentence Structure & Business German\nModule 4: CEFR B2 Professional, Clinical & Technical Certification Mastery\nModule 5: Official Goethe / Telc Mock Simulations & Live Oral Prep' 
     },
     { 
       id: '2', 
-      name: 'IELTS / TOEFL / PTE', 
+      name: 'IELTS Test 2', 
       top_title: 'English Language Mastery', 
       subtitle: 'Target Band 8.0+ Academic & General Strategies with AI Essay Evaluation', 
       show_in_sub_nav: true, 
       displayPosition: 2, 
+      viewType: 'Main View',
       staff: 'AI Bot & Cambridge Certified Mentor', 
       chapter: '16', 
       duration: '8 Weeks', 
-      methods: 'Online FastTrack Video + AI [Video + AI Labs]', 
-      pathId: '2', 
-      pathName: 'Online FastTrack Video + AI', 
+      methods: 'Path 1 Test - Band 8.5+ Strategy Masterclass [Cambridge Mock Labs]', 
+      pathId: 'p2-1', 
+      pathName: 'Path 1 Test - Band 8.5+ Strategy Masterclass', 
       batchId: '2', 
       batchName: 'Evening Intensive Batch', 
       materials: 'Cambridge Mock Portal & Audio Labs', 
       fee: '$149', 
       students: '240', 
-      category: 'IELTS',
+      category: 'Education & Languages',
+      subCategory: 'IELTS / TOEFL / PTE',
       libraryType: 'AI',
       enrolledStudentsList: [
-        { id: 's5', name: 'Rahul Varma', email: 'rahul.varma@gmail.com', status: 'In Class', joinedAt: '18:00 PM', attendanceScore: 96 },
-        { id: 's6', name: 'Elena Rostova', email: 'elena.rostova@ox.ac.uk', status: 'In Class', joinedAt: '18:02 PM', attendanceScore: 94 },
-        { id: 's7', name: 'Karthik Raja', email: 'karthik.r@iitb.ac.in', status: 'Present', joinedAt: '18:10 PM', attendanceScore: 90 }
+        { id: 's5', name: 'Rahul Varma', email: 'rahul.varma@gmail.com', status: 'In Class', joinedAt: '18:00 PM', attendanceScore: 96 }
       ],
-      courseStructure: 'Module 1: Speaking Mock Interviews & Accent Tuning\nModule 2: Academic Writing Task 1 & 2 Strategies\nModule 3: Critical Reading & Scanning Drills\nModule 4: Multi-accent Audio Listening Drills' 
+      courseStructure: 'Module 1: Speaking Mock Interviews & Band 8.5 Accent Tuning\nModule 2: Academic Writing Task 1 & 2 Strategies & AI Essay Feedback\nModule 3: Critical Reading, Skimming & Scanning Drills\nModule 4: Multi-Accent Audio Listening Precision & Cambridge Mocks' 
     },
     { 
       id: '3', 
-      name: 'Software Engineering', 
+      name: 'Software Test 3', 
       top_title: 'Full-Stack & Cloud Architecture', 
       subtitle: 'Modern React, Node, DevOps, Microservices & AI Pair Programming', 
       show_in_sub_nav: true, 
       displayPosition: 3, 
+      viewType: 'Main View',
       staff: 'Jane - ID 092 (Lead Cloud Architect)', 
       chapter: '32', 
       duration: '24 Weeks', 
-      methods: 'Live Enterprise Cohort [Live Instructor + Mentoring]', 
-      pathId: '3', 
-      pathName: 'Live Enterprise Cohort', 
+      methods: 'Path 1 Test - Full-Stack React 19 & TypeScript [Live Instructor + Labs]', 
+      pathId: 'p3-1', 
+      pathName: 'Path 1 Test - Full-Stack React 19 & TypeScript', 
       batchId: '3', 
       batchName: 'Weekend Tech Bootcamp', 
       materials: 'Cloud Sandbox & Repos', 
       fee: '$599', 
       students: '95', 
-      category: 'Software Training',
+      category: 'Software & IT Training',
+      subCategory: 'Full-Stack Web Dev (React/Node)',
       libraryType: 'TUTOR',
       enrolledStudentsList: [
-        { id: 's8', name: 'Vikram Mehta', email: 'vikram.m@dev.io', status: 'In Class', joinedAt: '14:00 PM', attendanceScore: 100 },
-        { id: 's9', name: 'Sarah Jenkins', email: 'sarah.j@cloudops.com', status: 'In Class', joinedAt: '14:01 PM', attendanceScore: 97 }
+        { id: 's8', name: 'Vikram Mehta', email: 'vikram.m@dev.io', status: 'In Class', joinedAt: '14:00 PM', attendanceScore: 100 }
       ],
-      courseStructure: 'Phase 1: React 19, TypeScript & Tailwind CSS\nPhase 2: Node.js, Express & PostgreSQL\nPhase 3: Docker, CI/CD & Cloud Deployment\nPhase 4: Live Enterprise Project Capstone' 
+      courseStructure: 'Phase 1: React 19, TypeScript & Tailwind CSS Design Systems\nPhase 2: Node.js, Express, Microservices & PostgreSQL Databases\nPhase 3: Docker Containers, CI/CD Automated Pipelines & Cloud Deployments\nPhase 4: Live International Production Capstone Project' 
     },
     { 
       id: '4', 
-      name: 'SAP ERP Fundamentals', 
+      name: 'SAP Course Test 4', 
       top_title: 'Enterprise Software Training', 
       subtitle: 'Financials (FICO), Supply Chain & Logistics (MM/SD) Workflows', 
-      show_in_sub_nav: false, 
+      show_in_sub_nav: true, 
       displayPosition: 4, 
+      viewType: 'Main View',
       staff: 'Nadeem - ID 091 (SAP Certified Lead)', 
       chapter: '18', 
       duration: '10 Weeks', 
-      methods: 'Corporate Hands-On Lab [Enterprise Practical Simulation]', 
-      pathId: '4', 
-      pathName: 'Corporate Hands-On Lab', 
+      methods: 'Path 1 Test - SAP FICO Financial Accounting Simulation [Corporate Labs]', 
+      pathId: 'p4-1', 
+      pathName: 'Path 1 Test - SAP FICO Financial Accounting Simulation', 
       batchId: '4', 
       batchName: 'Weekday Corporate Slot', 
       materials: 'SAP Sandbox Access & ECC/S4HANA Guides', 
       fee: '$499', 
       students: '60', 
-      category: 'SAP',
+      category: 'Enterprise ERP & SAP',
+      subCategory: 'SAP FICO (Financials)',
       libraryType: 'TUTOR',
       enrolledStudentsList: [
-        { id: 's10', name: 'Manish Gupta', email: 'manish.g@corp.de', status: 'In Class', joinedAt: '10:00 AM', attendanceScore: 95 },
-        { id: 's11', name: 'Claudia Brandt', email: 'claudia.b@sap-partner.de', status: 'Present', joinedAt: '10:04 AM', attendanceScore: 92 }
+        { id: 's10', name: 'Manish Gupta', email: 'manish.g@corp.de', status: 'In Class', joinedAt: '10:00 AM', attendanceScore: 95 }
       ],
-      courseStructure: 'Module 1: ERP Architecture & Navigation\nModule 2: Financial Ledger & Invoicing\nModule 3: Procurement & Vendor Management\nModule 4: Enterprise Audit & Reporting' 
+      courseStructure: 'Module 1: SAP S/4HANA Enterprise Architecture & Navigation\nModule 2: Financial Ledger, General Accounting & Invoicing Systems\nModule 3: Procurement, Materials Management (MM) & Vendor Workflows\nModule 4: Sales & Distribution (SD), Enterprise Audit & Regulatory Reporting' 
     },
     { 
       id: '5', 
@@ -690,6 +741,7 @@ export const getGlobalCourses = (): GlobalCourse[] => {
       subtitle: 'Meta Ads, Google Ads, Viral Content Strategy & AI Copywriting', 
       show_in_sub_nav: false, 
       displayPosition: 5, 
+      viewType: 'Blocks View',
       staff: 'Jane - ID 092 (Growth Lead)', 
       chapter: '12', 
       duration: '6 Weeks', 
@@ -701,7 +753,8 @@ export const getGlobalCourses = (): GlobalCourse[] => {
       materials: 'Ad Spend Simulator & Campaign Templates', 
       fee: '$179', 
       students: '110', 
-      category: 'Social Media',
+      category: 'Digital Marketing & Growth',
+      subCategory: 'Meta & Google Ads Strategy',
       libraryType: 'AI',
       enrolledStudentsList: [
         { id: 's12', name: 'Arjun Rao', email: 'arjun.growth@agency.com', status: 'In Class', joinedAt: '18:00 PM', attendanceScore: 91 }
@@ -715,6 +768,7 @@ export const getGlobalCourses = (): GlobalCourse[] => {
       subtitle: 'Fachsprachprüfung (FSP) Preparation for Doctors, Dentists & Nurses', 
       show_in_sub_nav: false, 
       displayPosition: 6, 
+      viewType: 'Blocks View',
       staff: 'Dr. Klaus (Clinical Mentor)', 
       chapter: '14', 
       duration: '12 Weeks', 
@@ -726,11 +780,11 @@ export const getGlobalCourses = (): GlobalCourse[] => {
       materials: 'Clinical Case Files & Simulated Audio Dialogues', 
       fee: '$399', 
       students: '45', 
-      category: 'Healthcare',
+      category: 'Healthcare & Clinical Practice',
+      subCategory: 'Fachsprachprüfung (FSP)',
       libraryType: 'TUTOR',
       enrolledStudentsList: [
-        { id: 's13', name: 'Dr. Anjali Nair', email: 'dr.anjali@med.de', status: 'In Class', joinedAt: '09:00 AM', attendanceScore: 99 },
-        { id: 's14', name: 'Dr. Tarek Mansour', email: 'tarek.m@klinikum.de', status: 'In Class', joinedAt: '09:02 AM', attendanceScore: 96 }
+        { id: 's13', name: 'Dr. Anjali Nair', email: 'dr.anjali@med.de', status: 'In Class', joinedAt: '09:00 AM', attendanceScore: 99 }
       ],
       courseStructure: 'Unit 1: Doctor-Patient Consultations\nUnit 2: Medical History (Anamnese) Intake\nUnit 3: Clinical Documentation (Arztbrief)\nUnit 4: Mock Examination Panels' 
     }
@@ -747,7 +801,13 @@ export const setGlobalCourses = (courses: GlobalCourse[]) => {
 
 export const getGlobalApprovals = (): ApprovalRequest[] => {
   const data = localStorage.getItem('ilas_global_approvals');
-  return data ? JSON.parse(data) : [];
+  if (!data) return [];
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    console.warn('Failed to parse ilas_global_approvals, resetting:', e);
+    return [];
+  }
 };
 
 export const addGlobalApproval = (approval: Omit<ApprovalRequest, 'id' | 'status' | 'date'>) => {
@@ -774,7 +834,13 @@ export const updateGlobalApproval = (id: string, status: 'Approved' | 'Rejected'
 
 export const getGlobalUpdates = (): UpdateLog[] => {
   const data = localStorage.getItem('ilas_global_updates');
-  return data ? JSON.parse(data) : [];
+  if (!data) return [];
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    console.warn('Failed to parse ilas_global_updates, resetting:', e);
+    return [];
+  }
 };
 
 export const addGlobalUpdate = (update: Omit<UpdateLog, 'id' | 'timestamp'>) => {
@@ -796,7 +862,13 @@ export const getInquiries = (): Inquiry[] => {
     localStorage.setItem('ilas_inquiries', JSON.stringify(SEED_INQUIRIES));
     return SEED_INQUIRIES;
   }
-  return JSON.parse(data);
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    console.warn('Failed to parse ilas_inquiries, resetting to seed:', e);
+    localStorage.setItem('ilas_inquiries', JSON.stringify(SEED_INQUIRIES));
+    return SEED_INQUIRIES;
+  }
 };
 
 export const saveInquiry = (inquiry: Omit<Inquiry, 'id' | 'timestamp'>): Inquiry[] => {
@@ -844,7 +916,13 @@ export const getVisitorLogs = (): VisitorLog[] => {
     localStorage.setItem('ilas_visitor_logs', JSON.stringify(SEED_VISITOR_LOGS));
     return SEED_VISITOR_LOGS;
   }
-  return JSON.parse(data);
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    console.warn('Failed to parse ilas_visitor_logs, resetting to seed:', e);
+    localStorage.setItem('ilas_visitor_logs', JSON.stringify(SEED_VISITOR_LOGS));
+    return SEED_VISITOR_LOGS;
+  }
 };
 
 export const logVisitorActivity = (page: string, timeSpent: number): void => {
@@ -885,7 +963,13 @@ export const getEnterpriseTasks = (): EnterpriseTask[] => {
     localStorage.setItem('ilas_enterprise_tasks', JSON.stringify(SEED_TASKS));
     return SEED_TASKS;
   }
-  return JSON.parse(data);
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    console.warn('Failed to parse ilas_enterprise_tasks, resetting to seed:', e);
+    localStorage.setItem('ilas_enterprise_tasks', JSON.stringify(SEED_TASKS));
+    return SEED_TASKS;
+  }
 };
 
 export const saveEnterpriseTask = (task: Omit<EnterpriseTask, 'id' | 'createdAt' | 'updatedAt'>): EnterpriseTask[] => {
@@ -908,7 +992,13 @@ export const getStaffRegistry = (): StaffUser[] => {
     localStorage.setItem('ilas_staff_registry', JSON.stringify(SEED_STAFF));
     return SEED_STAFF;
   }
-  return JSON.parse(data);
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    console.warn('Failed to parse ilas_staff_registry, resetting to seed:', e);
+    localStorage.setItem('ilas_staff_registry', JSON.stringify(SEED_STAFF));
+    return SEED_STAFF;
+  }
 };
 
 export const saveStaffMember = (staff: Omit<StaffUser, 'id'>): StaffUser[] => {

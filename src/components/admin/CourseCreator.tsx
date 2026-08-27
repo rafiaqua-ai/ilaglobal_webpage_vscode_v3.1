@@ -58,6 +58,7 @@ const CourseCreator: React.FC<CourseCreatorProps> = ({ onNavigateTab }) => {
   const [subtitle, setSubtitle] = useState('');
   const [showInSubNav, setShowInSubNav] = useState(true);
   const [displayPosition, setDisplayPosition] = useState(1);
+  const [viewType, setViewType] = useState<'Main View' | 'Blocks View' | 'Both'>('Main View');
   const [chapters, setChapters] = useState('');
   const [durationVal, setDurationVal] = useState('');
   const [durationType, setDurationType] = useState('Weeks');
@@ -108,6 +109,7 @@ const CourseCreator: React.FC<CourseCreatorProps> = ({ onNavigateTab }) => {
     setSubtitle(course.subtitle || '');
     setShowInSubNav(course.show_in_sub_nav !== false);
     setDisplayPosition(course.displayPosition || 1);
+    setViewType(course.viewType || (course.displayPosition <= 3 ? 'Main View' : 'Blocks View'));
     setCourseStructure(course.courseStructure || '');
     setMaterialItems(course.materialItems || DEFAULT_MATERIALS);
     setChapters(course.chapter);
@@ -128,6 +130,7 @@ const CourseCreator: React.FC<CourseCreatorProps> = ({ onNavigateTab }) => {
     setSubtitle('');
     setShowInSubNav(true);
     setDisplayPosition(1);
+    setViewType('Main View');
     setCourseStructure('');
     setMaterialItems(DEFAULT_MATERIALS);
     setChapters('');
@@ -178,6 +181,7 @@ const CourseCreator: React.FC<CourseCreatorProps> = ({ onNavigateTab }) => {
       subtitle: subtitle.trim(),
       show_in_sub_nav: showInSubNav,
       displayPosition: displayPosition || 1,
+      viewType: viewType || 'Main View',
       staff: staff || 'Unassigned',
       chapter: chapters || '0',
       duration: `${durationVal || '1'} ${durationType}`,
@@ -529,6 +533,59 @@ const CourseCreator: React.FC<CourseCreatorProps> = ({ onNavigateTab }) => {
                 className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-1 focus:ring-brand-500" 
                 placeholder="e.g. Goethe & Telc Standard Certification Pathways" 
               />
+            </div>
+
+            {/* View Layout & Target Canvas Selector */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <Eye className="w-3.5 h-3.5 text-brand-600" />
+                  <span>VIEW LAYOUT & TARGET CANVAS</span>
+                </label>
+                <span className="text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+                  {viewType}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setViewType('Main View')}
+                  className={`py-2 px-2 rounded-lg text-xs font-bold transition-all border text-center cursor-pointer ${
+                    viewType === 'Main View'
+                      ? 'bg-brand-600 text-white border-brand-600 shadow-xs'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  Main View
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewType('Blocks View')}
+                  className={`py-2 px-2 rounded-lg text-xs font-bold transition-all border text-center cursor-pointer ${
+                    viewType === 'Blocks View'
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  Blocks View
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewType('Both')}
+                  className={`py-2 px-2 rounded-lg text-xs font-bold transition-all border text-center cursor-pointer ${
+                    viewType === 'Both'
+                      ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  Both Views
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-500">
+                {viewType === 'Main View' && '✨ Expands dynamically on the sequential main canvas in numerical position order (1, 2, 3...).'}
+                {viewType === 'Blocks View' && '📦 Renders in the catalog blocks section at the bottom with Grid / Line display.'}
+                {viewType === 'Both' && '🌟 Displays on both the dynamic sequential main canvas and the catalog blocks section.'}
+              </p>
             </div>
 
             {/* Sub-Navigation Visibility Checkbox */}

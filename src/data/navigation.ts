@@ -8,7 +8,7 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { label: 'Home', href: '#home' },
   {
-    label: 'Education & Training',
+    label: 'All Courses',
     href: '#education',
     children: [
       { label: 'German Language A1-C2', href: '#course-german-language', description: 'A1–C2 certified courses' },
@@ -18,7 +18,7 @@ export const navItems: NavItem[] = [
     ],
   },
   {
-    label: 'Work While You Study',
+    label: 'Work and Study',
     href: '#work-while-you-study-page',
     children: [
       { label: 'Freshers AI Training', href: '#work-while-you-study-page#overview', description: 'Overcome entry barriers with AI' },
@@ -38,7 +38,7 @@ export const navItems: NavItem[] = [
     ],
   },
   {
-    label: 'Visa & Services',
+    label: 'Visa and Services',
     href: '#visa-page',
     children: [
       { label: 'Student Visa', href: '#visa-page#student-visa', description: 'University Enrollment & Documentation' },
@@ -51,7 +51,7 @@ export const navItems: NavItem[] = [
     ],
   },
   {
-    label: 'Jobs & Career Services',
+    label: 'Jobs and Career',
     href: '#jobs-page',
     children: [
       { label: 'Premium Career Services', href: '#jobs-page', description: 'Strategic job support & applications' },
@@ -59,7 +59,6 @@ export const navItems: NavItem[] = [
       { label: 'AI Resume Match', href: '#jobs', description: 'Smart job matching portal' },
     ],
   },
-  { label: 'Rewards Plan', href: '#rewards' },
   { label: 'Apply Now 🎯', href: '#applications' },
 ]
 

@@ -132,17 +132,21 @@ export default function Navbar() {
     href?: string
     children?: NavChildItem[]
   }) => {
-    if (item.href && activeHash.startsWith(item.href)) {
+    if (!item) return false
+    const currentHash = activeHash || '#home'
+
+    if (item.href && currentHash.startsWith(item.href)) {
       return true
     }
 
-    if (item.children) {
+    if (item.children && Array.isArray(item.children)) {
       return item.children.some((child) => {
+        if (!child || !child.href) return false
         const hashPart = child.href.includes('#')
           ? child.href.substring(child.href.lastIndexOf('#'))
           : child.href
 
-        return activeHash.startsWith(hashPart)
+        return !!(hashPart && currentHash.startsWith(hashPart))
       })
     }
 
@@ -150,11 +154,13 @@ export default function Navbar() {
   }
 
   const isChildActive = (child: NavChildItem) => {
+    if (!child || !child.href) return false
+    const currentHash = activeHash || '#home'
     const hashPart = child.href.includes('#')
       ? child.href.substring(child.href.lastIndexOf('#'))
       : child.href
 
-    return activeHash.startsWith(hashPart)
+    return !!(hashPart && currentHash.startsWith(hashPart))
   }
 
   return (
@@ -237,17 +243,18 @@ export default function Navbar() {
 
           {/* ==================================================
               DESKTOP NAVIGATION
-              Visible from 1280px
+              Visible from lg (1024px)
           ================================================== */}
           <nav
             className="
               hidden
-              min-[1280px]:flex
+              lg:flex
               items-center
               justify-center
               flex-1
               min-w-0
-              gap-0
+              gap-0.5
+              xl:gap-1
             "
           >
             {navItems.map((item) => {
@@ -274,19 +281,17 @@ export default function Navbar() {
                           justify-center
                           text-center
                           px-1.5
-                          min-[1400px]:px-2
+                          min-[1400px]:px-2.5
                           py-2
-                          text-[11px]
-                          min-[1400px]:text-xs
+                          text-xs
+                          min-[1400px]:text-[13px]
                           font-semibold
                           leading-tight
                           transition-colors
-                          whitespace-normal
-                          max-w-[90px]
-                          min-[1400px]:max-w-[110px]
+                          whitespace-nowrap
                           ${
                             isActive
-                              ? 'text-brand-700'
+                              ? 'text-brand-700 font-bold'
                               : 'text-slate-600 hover:text-brand-700'
                           }
                         `}
@@ -466,22 +471,20 @@ export default function Navbar() {
                     items-center
                     justify-center
                     px-1.5
-                    min-[1400px]:px-2
+                    min-[1400px]:px-2.5
                     py-2
-                    text-[11px]
-                    min-[1400px]:text-xs
+                    text-xs
+                    min-[1400px]:text-[13px]
                     font-semibold
                     leading-tight
                     text-center
                     transition-colors
-                    whitespace-normal
-                    max-w-[82px]
-                    min-[1400px]:max-w-[100px]
+                    whitespace-nowrap
                     shrink-0
 
                     ${
                       isActive
-                        ? 'text-brand-700'
+                        ? 'text-brand-700 font-bold'
                         : 'text-slate-600 hover:text-brand-700'
                     }
                   `}
@@ -512,7 +515,7 @@ export default function Navbar() {
           <div
             className="
               hidden
-              min-[1280px]:flex
+              lg:flex
               items-center
               gap-1.5
               shrink-0
@@ -623,7 +626,7 @@ export default function Navbar() {
 
           {/* ==================================================
               TABLET / MOBILE MENU BUTTON
-              Below 1280px
+              Below lg (1024px)
           ================================================== */}
           <button
             type="button"
@@ -632,7 +635,7 @@ export default function Navbar() {
               setOpenDropdown(null)
             }}
             className="
-              min-[1280px]:hidden
+              lg:hidden
               ml-auto
               p-2.5
               rounded-lg
@@ -663,7 +666,7 @@ export default function Navbar() {
       {mobileOpen && (
         <div
           className="
-            min-[1280px]:hidden
+            lg:hidden
             border-t
             border-slate-100
             bg-white

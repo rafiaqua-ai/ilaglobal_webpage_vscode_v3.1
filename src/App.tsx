@@ -9,7 +9,7 @@ import UnifiedIntakeForms from './components/common/UnifiedIntakeForms'
 import { useState, useEffect } from 'react'
 import HomePage from './pages/HomePage'
 import GermanLanguagePage from './pages/GermanLanguagePage'
-import { logVisitorActivity } from './lib/db'
+import { logVisitorActivity, getGlobalCourses } from './lib/db'
 import StudentDashboard from './pages/StudentDashboard'
 import AdminPortal from './pages/AdminPortal'
 import CoursePage from './pages/CoursePage'
@@ -68,7 +68,15 @@ function App() {
         setCurrentPage('course-page')
         const courseIdOrSlug = hash.replace('#course-', '').replace('#course-page#', '').replace('#course-page', '')
         if (courseIdOrSlug) {
-          setActiveCourseTitle(courseIdOrSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '))
+          const allCourses = getGlobalCourses();
+          const match = allCourses.find(c => c.id === courseIdOrSlug || c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') === courseIdOrSlug.toLowerCase() || c.name.toLowerCase() === courseIdOrSlug.toLowerCase());
+          if (match) {
+            setActiveCourseTitle(match.name);
+            setActiveCourseCategory(match.category || match.top_title || 'Specialized Program');
+          } else {
+            setActiveCourseTitle(courseIdOrSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '));
+            setActiveCourseCategory('Specialized Program');
+          }
         }
         window.scrollTo(0, 0)
       } else if (hash === '#student-dashboard') {
