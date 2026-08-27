@@ -199,12 +199,244 @@ export interface GlobalCategory {
   linkedCourseName?: string;
 }
 
+export interface TeachingStrategy {
+  id: string;
+  name: string;
+  category: string;
+  tagline: string;
+  description: string;
+  pacingModel: string;
+  targetLearner: string;
+  defaultActive?: boolean;
+}
+
+export interface StudentAnalyzingStrategy {
+  id: string;
+  name: string;
+  targetMetric: string;
+  threshold: string;
+  description: string;
+  adaptationAction: string;
+  active: boolean;
+  customRule?: string;
+}
+
+export const DEFAULT_TEACHING_STRATEGIES: TeachingStrategy[] = [
+  {
+    id: 'ts-1',
+    name: 'Fast for Fast',
+    category: 'Velocity & Acceleration',
+    tagline: 'High-velocity cognitive pacing with rapid syntactic challenge',
+    description: 'Compresses learning cycles by 40% for advanced learners using rapid-fire interactive drills, minimal redundancy, and instant CEFR benchmark jumps.',
+    pacingModel: 'Accelerated (1.5x Speed)',
+    targetLearner: 'Fast Learners & Intensive Bootcamps',
+    defaultActive: true
+  },
+  {
+    id: 'ts-2',
+    name: 'Slow for Slow',
+    category: 'Foundational Pacing',
+    tagline: 'Step-by-step deconstruction with zero-anxiety spaced repetition',
+    description: 'Deconstructs complex grammar into digestible micro-units with multi-angle visual reinforcement, patient audio calibration, and confidence-building exercises.',
+    pacingModel: 'Gradual Micro-Pacing (0.8x Speed)',
+    targetLearner: 'Beginners & Anxious Learners',
+    defaultActive: true
+  },
+  {
+    id: 'ts-3',
+    name: 'Executive & Professional',
+    category: 'Corporate Mastery',
+    tagline: 'Business cases, boardroom negotiations & professional email syntax',
+    description: 'Focuses strictly on high-stakes corporate communication, formal etiquette, technical negotiations, and C-level executive presentation formats.',
+    pacingModel: 'Direct & Scenario-Based',
+    targetLearner: 'Working Executives & Corporate Teams',
+    defaultActive: true
+  },
+  {
+    id: 'ts-4',
+    name: 'Kids & Young Learners',
+    category: 'Gamified Immersion',
+    tagline: 'Gamified mnemonics, animated songs & interactive story quests',
+    description: 'Maximizes engagement through animated character dialogues, catchy musical mnemonics, color-coded picture flashcards, and gamified badge achievements.',
+    pacingModel: 'Playful & High Engagement',
+    targetLearner: 'Children & Young Students (Ages 6–14)',
+    defaultActive: false
+  },
+  {
+    id: 'ts-5',
+    name: 'Scientific & Mathematical',
+    category: 'Logical & Structural',
+    tagline: 'Structural grammar theorems, logical syntax proofs & algorithmic formulas',
+    description: 'Treats grammar rules as logical equations and mathematical schemas. Provides modular syntax trees, rule derivations, and deterministic linguistic structures.',
+    pacingModel: 'Analytical & Rule-Driven',
+    targetLearner: 'Engineers, Analysts & STEM Students',
+    defaultActive: false
+  },
+  {
+    id: 'ts-6',
+    name: 'Immersion & Socratic Dialogue',
+    category: 'Conversational Fluency',
+    tagline: '100% target-language environment with provocative inquiry debates',
+    description: 'Enforces complete immersion without mother-tongue translation. The AI prompts thought-provoking Socratic questions to stimulate spontaneous oral formulation.',
+    pacingModel: 'Active Dialectic & Immersion',
+    targetLearner: 'B1–C2 Advanced Speakers',
+    defaultActive: false
+  },
+  {
+    id: 'ts-7',
+    name: 'Storytelling & Scenario Roleplay',
+    category: 'Experiential Context',
+    tagline: 'Narrative-driven daily immersion & realistic workplace roleplay',
+    description: 'Embeds vocabulary into compelling episodic storytelling (e.g. relocating to Berlin, hospital rounds, airport immigration) for natural contextual retention.',
+    pacingModel: 'Episodic & Narrative',
+    targetLearner: 'Job Seekers & Expats',
+    defaultActive: false
+  },
+  {
+    id: 'ts-8',
+    name: 'Clinical & Medical Healthcare',
+    category: 'Vocational Specialized',
+    tagline: 'Doctor-patient consultations, medical history (Anamnese) & FSP prep',
+    description: 'Tailored for doctors, dentists, and nurses preparing for the German Fachsprachprüfung (FSP). Focuses on anamnese interviews, Arztbrief writing, and medical diagnosis.',
+    pacingModel: 'Clinical Simulation',
+    targetLearner: 'Healthcare Professionals',
+    defaultActive: false
+  },
+  {
+    id: 'ts-9',
+    name: 'Exam & Certification Drills',
+    category: 'Test Preparation',
+    tagline: 'Goethe, Telc & IELTS Band 8.5+ timed test tactics & scoring rubric mocks',
+    description: 'Targeted test simulations with strict countdown timers, Cambridge/Goethe official scoring rubrics, graph interpretation strategies, and timed essay evaluations.',
+    pacingModel: 'Timed Mock & Rigorous Drills',
+    targetLearner: 'Exam Candidates & Visa Seekers',
+    defaultActive: false
+  },
+  {
+    id: 'ts-10',
+    name: 'Visual & Mind-Mapping Architecture',
+    category: 'Visual Cognition',
+    tagline: 'Infographic grammar charts, color-coded case diagrams & memory maps',
+    description: 'Uses rich visual anchors, color-coded grammatical cases (Nom/Akk/Dat/Gen), interactive infographics, and spatial mind maps for visual memory encoding.',
+    pacingModel: 'Visual-Spatial Encoding',
+    targetLearner: 'Visual & Kinesthetic Learners',
+    defaultActive: false
+  }
+];
+
+export const DEFAULT_STUDENT_ANALYZING_STRATEGIES: StudentAnalyzingStrategy[] = [
+  {
+    id: 'sas-1',
+    name: 'Catch-up Speed & Comprehension Velocity',
+    targetMetric: 'Time to First Correct Response',
+    threshold: '< 15 Seconds (Optimal)',
+    description: 'Measures the time taken to grasp and respond to new concept prompts, dynamically increasing or reducing cognitive load.',
+    adaptationAction: 'If speed drops below 60%, automatically inject a step-by-step deconstruction card.',
+    active: true
+  },
+  {
+    id: 'sas-2',
+    name: 'Quiz & Exam Performance Scoring',
+    targetMetric: 'Formative Assessment Accuracy',
+    threshold: '≥ 85% Pass Mark',
+    description: 'Tracks real-time quiz response accuracy and error clustering across key grammatical and technical competencies.',
+    adaptationAction: 'Trigger targeted flashcard drill upon 2 consecutive incorrect attempts.',
+    active: true
+  },
+  {
+    id: 'sas-3',
+    name: 'Attendance & Class Flow Continuity',
+    targetMetric: 'Session Engagement & Punctuality',
+    threshold: '≥ 90% Class Presence',
+    description: 'Monitors student login punctuality, session duration, drop-off timestamps, and learning rhythm across consecutive days.',
+    adaptationAction: 'Alert tutor and provide a 3-minute rapid catch-up summary for late joiners.',
+    active: true
+  },
+  {
+    id: 'sas-4',
+    name: 'Response Accuracy & Error Recurrence',
+    targetMetric: 'Persistent Error Frequency',
+    threshold: '< 2 Recurring Mistakes',
+    description: 'Categorizes recurring mistake types (e.g. Dative vs Accusative, article agreement) to identify systemic weak points.',
+    adaptationAction: 'Auto-compile a personalized "Mistake Buster" micro-lesson at the end of each module.',
+    active: true
+  },
+  {
+    id: 'sas-5',
+    name: 'Prompt Quality & Inquiry Depth',
+    targetMetric: 'Syntactic & Contextual Complexity',
+    threshold: 'Level B1+ Depth',
+    description: 'Assesses the vocabulary maturity, question phrasing, and conceptual curiosity in student doubts and chat messages.',
+    adaptationAction: 'Elevate AI tutor conversational complexity when student demonstrates high prompt depth.',
+    active: true
+  },
+  {
+    id: 'sas-6',
+    name: 'Professional Intent & Career Alignment',
+    targetMetric: 'Vocational Relevancy Index',
+    threshold: '100% Industry Aligned',
+    description: 'Maps student background (engineering, healthcare, IT, management) to tailor conversational examples to real workplace tasks.',
+    adaptationAction: 'Swap generic daily examples with enterprise-grade clinical or tech case studies.',
+    active: true
+  },
+  {
+    id: 'sas-7',
+    name: 'Audio Pronunciation & Phonetic Pitch',
+    targetMetric: 'Acoustic Phoneme Match Score',
+    threshold: '≥ 80% Native Waveform Match',
+    description: 'Analyzes spoken audio waveforms, syllable stress, Umlaut clarity, and vocal hesitation during speaking drills.',
+    adaptationAction: 'Display instant visual mouth-shape diagrams and waveform comparison overlays.',
+    active: true
+  },
+  {
+    id: 'sas-8',
+    name: 'Retention & Spaced Memory Decay',
+    targetMetric: 'Recall Rate across Intervals',
+    threshold: '≥ 75% at 7-Day Marker',
+    description: 'Tests retention of previously cleared concepts across 24-hour, 7-day, and 30-day spaced repetition checkpoints.',
+    adaptationAction: 'Insert dynamic 60-second "Spaced Refreshers" into upcoming class intros.',
+    active: true
+  },
+  {
+    id: 'sas-9',
+    name: 'Interactive Whiteboard & Activity Index',
+    targetMetric: 'Canvas & Widget Interaction Rate',
+    threshold: '≥ 5 Actions per Topic',
+    description: 'Monitors cursor movement, whiteboard drawing participation, audio playback clicks, and exercise completion speed.',
+    adaptationAction: 'Prompt inactive students with direct interactive multiple-choice popups.',
+    active: true
+  },
+  {
+    id: 'sas-10',
+    name: 'Sentiment & Frustration Pattern Detection',
+    targetMetric: 'Hesitation & Sentiment Score',
+    threshold: 'Positive / Neutral Confidence',
+    description: 'Detects repeated backspaces, long hesitation pauses (>30s), and negative sentiment keywords indicating confusion.',
+    adaptationAction: 'Trigger encouraging AI voice affirmation and simplify the active exercise prompt.',
+    active: true
+  }
+];
+
 export interface AICoursePayload {
   curriculumOverview?: string;
   sourceLibraries?: string[];
   strategiesApplied?: string[];
+  studentAnalyzingRules?: StudentAnalyzingStrategy[];
+  multimediaConditions?: {
+    primaryInstructionPrompt?: string;
+    grammarComplexity?: string;
+    vocabRange?: string;
+    clipDurationBounds?: string;
+    exerciseFrequency?: string;
+    accentPreference?: string;
+    passScoreThreshold?: string;
+  };
+  aiLibraryCategory?: 'Intelli Coach Classes' | 'Video + AI Answering Classes';
   aiTutorPersona?: string;
   generatedWhiteboardNotes?: string;
+  testApprovalStatus?: 'Pending Review' | 'Approved' | 'Requires Refinement';
+  recordedSessionUrl?: string;
+  recordedSessionDate?: string;
   sampleExercise?: {
     question: string;
     options: string[];
@@ -239,6 +471,21 @@ export interface GlobalCourse {
   show_in_sub_nav?: boolean;
   displayPosition: number;
   viewType?: 'Main View' | 'Blocks View' | 'Both';
+  aiLibrarySection?: 'Intelli Coach Classes' | 'Video + AI Answering Classes';
+  teachingStrategies?: string[];
+  studentAnalyzingStrategies?: StudentAnalyzingStrategy[];
+  multimediaConditions?: {
+    primaryInstructionPrompt?: string;
+    grammarComplexity?: string;
+    vocabRange?: string;
+    clipDurationBounds?: string;
+    exerciseFrequency?: string;
+    accentPreference?: string;
+    passScoreThreshold?: string;
+  };
+  testApprovalStatus?: 'Pending Review' | 'Approved' | 'Requires Refinement';
+  recordedSessionUrl?: string;
+  recordedSessionDate?: string;
   staff: string;
   chapter: string;
   duration: string;
@@ -610,6 +857,42 @@ export const getGlobalBatches = (): GlobalBatch[] => {
 export const setGlobalBatches = (batches: GlobalBatch[]) => {
   localStorage.setItem('ilas_batches', JSON.stringify(batches));
   window.dispatchEvent(new CustomEvent('ilas-batches-changed'));
+};
+
+export const getGlobalTeachingStrategies = (): TeachingStrategy[] => {
+  const data = localStorage.getItem('ilas_teaching_strategies');
+  if (data) {
+    try {
+      return JSON.parse(data);
+    } catch (e) {
+      console.warn('Failed to parse ilas_teaching_strategies:', e);
+    }
+  }
+  localStorage.setItem('ilas_teaching_strategies', JSON.stringify(DEFAULT_TEACHING_STRATEGIES));
+  return DEFAULT_TEACHING_STRATEGIES;
+};
+
+export const setGlobalTeachingStrategies = (strategies: TeachingStrategy[]) => {
+  localStorage.setItem('ilas_teaching_strategies', JSON.stringify(strategies));
+  window.dispatchEvent(new CustomEvent('ilas-teaching-strategies-changed'));
+};
+
+export const getGlobalStudentAnalyzingStrategies = (): StudentAnalyzingStrategy[] => {
+  const data = localStorage.getItem('ilas_student_analyzing_strategies');
+  if (data) {
+    try {
+      return JSON.parse(data);
+    } catch (e) {
+      console.warn('Failed to parse ilas_student_analyzing_strategies:', e);
+    }
+  }
+  localStorage.setItem('ilas_student_analyzing_strategies', JSON.stringify(DEFAULT_STUDENT_ANALYZING_STRATEGIES));
+  return DEFAULT_STUDENT_ANALYZING_STRATEGIES;
+};
+
+export const setGlobalStudentAnalyzingStrategies = (strategies: StudentAnalyzingStrategy[]) => {
+  localStorage.setItem('ilas_student_analyzing_strategies', JSON.stringify(strategies));
+  window.dispatchEvent(new CustomEvent('ilas-student-analyzing-strategies-changed'));
 };
 
 export const getGlobalCourses = (): GlobalCourse[] => {

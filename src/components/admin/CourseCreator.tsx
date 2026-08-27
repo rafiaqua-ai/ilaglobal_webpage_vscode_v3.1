@@ -303,6 +303,7 @@ const CourseCreator: React.FC<CourseCreatorProps> = ({ onNavigateTab }) => {
       id: newPathId,
       name: modalPathName.trim(),
       methods: modalPathMethod.trim(),
+      position: availablePaths.length + 1,
       starting: modalPathStarting || new Date().toISOString().split('T')[0],
       ending: modalPathEnding || '',
       remarks: modalPathRemarks.trim() || 'Custom created path',

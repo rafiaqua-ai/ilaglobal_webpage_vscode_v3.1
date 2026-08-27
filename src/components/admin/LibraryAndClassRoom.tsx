@@ -8,9 +8,9 @@ import {
   ChevronRight, ArrowRight, ExternalLink, Bookmark, ShieldCheck, 
   Terminal, Sliders, Globe, Zap, Check, Copy, RefreshCw, PlusCircle,
   User, UserPlus, Radio, Award, AlertCircle, Lock, LayoutGrid, List,
-  Filter, ChevronDown
+  Filter, ChevronDown, BarChart2, Cpu
 } from 'lucide-react';
-import { getGlobalCourses, GlobalCourse, EnrolledStudent, getGlobalCategories, GlobalCategory } from '../../lib/db';
+import { getGlobalCourses, setGlobalCourses, GlobalCourse, EnrolledStudent, getGlobalCategories, GlobalCategory } from '../../lib/db';
 
 interface LibraryAndClassRoomProps {
   onNavigateTab?: (tabName: string) => void;
@@ -53,7 +53,7 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
   const [courses, setCourses] = useState<GlobalCourse[]>([]);
   const [availableCategories, setAvailableCategories] = useState<GlobalCategory[]>([]);
   const [activeCourseId, setActiveCourseId] = useState<string>('1');
-  const [libraryFilter, setLibraryFilter] = useState<'ALL' | 'TUTOR' | 'AI'>('ALL');
+  const [librarySectionTab, setLibrarySectionTab] = useState<'ALL' | 'INTELLI_COACH' | 'VIDEO_AI' | 'TUTOR'>('ALL');
   const [selectedCategory, setSelectedCategory] = useState<string>('All Categories');
   const [courseViewMode, setCourseViewMode] = useState<'GRID' | 'LIST'>('GRID');
   
@@ -71,6 +71,13 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
   const [isLiked, setIsLiked] = useState<boolean>(false);
   const [likeCount, setLikeCount] = useState<number>(142);
   const [animateHeart, setAnimateHeart] = useState<boolean>(false);
+
+  // 2b. Automated Video Recording & Test Approval State
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [recordingSeconds, setRecordingSeconds] = useState<number>(0);
+  const [isRecordingPaused, setIsRecordingPaused] = useState<boolean>(false);
+  const [showRecordingSavedToast, setShowRecordingSavedToast] = useState<boolean>(false);
+  const [showLiveTelemetryHUD, setShowLiveTelemetryHUD] = useState<boolean>(true);
 
   // 3. Selection State inside Classroom
   const [selectedItemId, setSelectedItemId] = useState<string>('intro');
@@ -145,6 +152,17 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
     return () => clearInterval(timer);
   }, [isPlaying, totalDuration, playbackSpeed]);
 
+  // Video recording timer simulation
+  useEffect(() => {
+    let recTimer: any;
+    if (isRecording && !isRecordingPaused) {
+      recTimer = setInterval(() => {
+        setRecordingSeconds(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(recTimer);
+  }, [isRecording, isRecordingPaused]);
+
   // Load courses and categories dynamically from DB / Course Creator
   useEffect(() => {
     const loadCourses = () => {
@@ -152,6 +170,16 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
       setCourses(dbCourses);
       
       const storedCourseId = localStorage.getItem('ilas_active_library_course_id');
+      const storedSectionTab = localStorage.getItem('ilas_active_library_section_tab');
+
+      if (storedSectionTab === 'Intelli Coach Classes') {
+        setLibrarySectionTab('INTELLI_COACH');
+        localStorage.removeItem('ilas_active_library_section_tab');
+      } else if (storedSectionTab === 'Video + AI Answering Classes') {
+        setLibrarySectionTab('VIDEO_AI');
+        localStorage.removeItem('ilas_active_library_section_tab');
+      }
+
       if (storedCourseId && dbCourses.find(c => c.id === storedCourseId)) {
         setActiveCourseId(storedCourseId);
         localStorage.removeItem('ilas_active_library_course_id');
@@ -696,6 +724,52 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
     setIsPlaying(false);
   };
 
+  // Update Course Approval Status
+  const handleUpdateApproval = (status: 'Approved' | 'Requires Refinement' | 'Pending Review') => {
+    const updated = courses.map(c => c.id === activeCourse.id ? { ...c, testApprovalStatus: status } : c);
+    setCourses(updated);
+    setGlobalCourses(updated);
+    window.dispatchEvent(new CustomEvent('ilas-courses-changed'));
+    alert(`Course "${activeCourse.name}" test approval status updated to: ${status}`);
+  };
+
+  // Video Recording Controls
+  const toggleRecording = () => {
+    if (!isRecording) {
+      setIsRecording(true);
+      setIsRecordingPaused(false);
+      setRecordingSeconds(0);
+    } else if (isRecording && isRecordingPaused) {
+      setIsRecordingPaused(false);
+    } else {
+      setIsRecordingPaused(true);
+    }
+  };
+
+  const stopAndSaveRecording = () => {
+    setIsRecording(false);
+    setIsRecordingPaused(false);
+    const recordedTimestamp = new Date().toLocaleString();
+    const mockRecUrl = `https://ilas.storage/recordings/rec-${activeCourse.id}-${Date.now()}.mp4`;
+    
+    const updated = courses.map(c => c.id === activeCourse.id ? { 
+      ...c, 
+      recordedSessionUrl: mockRecUrl,
+      recordedSessionDate: recordedTimestamp,
+      testApprovalStatus: c.testApprovalStatus || 'Pending Review'
+    } : c);
+    setCourses(updated);
+    setGlobalCourses(updated);
+    window.dispatchEvent(new CustomEvent('ilas-courses-changed'));
+    
+    setShowRecordingSavedToast(true);
+    setTimeout(() => setShowRecordingSavedToast(false), 4000);
+  };
+
+  const handleDownloadRecording = () => {
+    alert(`Downloading verified class session recording for "${activeCourse.name}" (MP4 Full-HD)...`);
+  };
+
   // Extract Categories Dynamically for Dropdown Filter
   const categoriesList = [
     'All Categories',
@@ -707,12 +781,15 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
 
   // Filtered Courses for List / Grid and Sidebar
   const filteredCourses = courses.filter(c => {
-    const isAICat = c.libraryType === 'AI' || c.name.includes('IELTS') || c.name.includes('Social');
-    
-    // 1. Library Filter (All, Tutorial, AI Class)
-    if (libraryFilter === 'TUTOR' && isAICat) return false;
-    if (libraryFilter === 'AI' && !isAICat) return false;
-    
+    const isIntelliCoach = c.aiLibrarySection === 'Intelli Coach Classes' || (c.libraryType === 'AI' && !c.name.includes('Video') && !c.aiLibrarySection);
+    const isVideoAI = c.aiLibrarySection === 'Video + AI Answering Classes' || (c.libraryType === 'AI' && c.name.includes('Video')) || c.name.includes('IELTS') || c.name.includes('Social');
+    const isTutor = c.libraryType === 'TUTOR' || (!c.libraryType && !c.aiLibrarySection);
+
+    // 1. Dual Library Sub-Navigation Filter
+    if (librarySectionTab === 'INTELLI_COACH' && !isIntelliCoach) return false;
+    if (librarySectionTab === 'VIDEO_AI' && !isVideoAI) return false;
+    if (librarySectionTab === 'TUTOR' && !isTutor) return false;
+
     // 2. Category Dropdown Filter
     if (selectedCategory !== 'All Categories') {
       const cat = (c.category || '').toLowerCase();
@@ -726,6 +803,10 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
 
     return true;
   });
+
+  const intelliCoachCount = courses.filter(c => c.aiLibrarySection === 'Intelli Coach Classes' || (c.libraryType === 'AI' && !c.name.includes('Video') && !c.aiLibrarySection)).length;
+  const videoAICount = courses.filter(c => c.aiLibrarySection === 'Video + AI Answering Classes' || (c.libraryType === 'AI' && c.name.includes('Video')) || c.name.includes('IELTS') || c.name.includes('Social')).length;
+  const tutorCount = courses.filter(c => c.libraryType === 'TUTOR' || (!c.libraryType && !c.aiLibrarySection)).length;
 
   return (
     <div className="w-full max-w-full flex flex-col gap-5 p-2 md:p-3 bg-slate-50 min-h-full font-sans text-slate-900 animate-in fade-in">
@@ -850,15 +931,116 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
             className="w-full bg-black rounded-2xl overflow-hidden shadow-xl border border-zinc-800 flex flex-col relative text-white"
           >
             
-            {/* Top Stream Status Overlay */}
-            <div className="px-4 py-2.5 bg-gradient-to-b from-black/95 via-black/40 to-transparent flex items-center justify-between z-10">
-              <div className="flex items-center gap-2">
+            {/* Top Stream Status Overlay & Testing Controls */}
+            <div className="px-4 py-2.5 bg-gradient-to-b from-black/95 via-black/60 to-transparent flex flex-wrap items-center justify-between gap-2 z-20">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-600/90 text-white text-[10px] font-black uppercase tracking-wider backdrop-blur-md animate-pulse">
                   <span className="w-1.5 h-1.5 rounded-full bg-white"></span> LIVE
                 </span>
-                <span className="text-xs font-bold text-zinc-200 truncate">
-                  {activeCourse.name} • {selectedItem.title}
+
+                <span className="text-xs font-bold text-zinc-200 truncate max-w-[220px]">
+                  {activeCourse.name}
                 </span>
+
+                {/* Library Category Badge */}
+                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase border ${
+                  activeCourse.aiLibrarySection === 'Video + AI Answering Classes'
+                    ? 'bg-purple-950/80 text-purple-300 border-purple-700/50'
+                    : 'bg-indigo-950/80 text-indigo-300 border-indigo-700/50'
+                }`}>
+                  {activeCourse.aiLibrarySection || 'Intelli Coach Class'}
+                </span>
+              </div>
+
+              {/* Top Right: Recording Controls & Test Approval Status */}
+              <div className="flex items-center gap-2 flex-wrap">
+                
+                {/* Automated Video Recording Pill */}
+                {isRecording ? (
+                  <div className="flex items-center gap-1 bg-red-950/80 border border-red-500/60 px-2.5 py-1 rounded-xl text-[10px] font-black text-red-300 animate-pulse">
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                    <span>REC {formatTime(recordingSeconds)}</span>
+                    <button
+                      type="button"
+                      onClick={toggleRecording}
+                      className="ml-1 text-white hover:text-red-200 cursor-pointer"
+                      title={isRecordingPaused ? 'Resume Recording' : 'Pause Recording'}
+                    >
+                      {isRecordingPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={stopAndSaveRecording}
+                      className="ml-1 bg-red-600 hover:bg-red-500 text-white px-1.5 py-0.5 rounded text-[9px] cursor-pointer"
+                      title="Save & Store Video"
+                    >
+                      Stop
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={toggleRecording}
+                    className="px-2.5 py-1 bg-red-600/30 hover:bg-red-600/50 text-red-300 hover:text-white border border-red-500/40 rounded-xl text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    <span>Start Rec</span>
+                  </button>
+                )}
+
+                {/* Test Approval Status Action */}
+                <div className="relative group">
+                  <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase flex items-center gap-1 cursor-pointer border ${
+                    activeCourse.testApprovalStatus === 'Approved'
+                      ? 'bg-emerald-950/80 text-emerald-300 border-emerald-600/50'
+                      : activeCourse.testApprovalStatus === 'Requires Refinement'
+                      ? 'bg-rose-950/80 text-rose-300 border-rose-600/50'
+                      : 'bg-amber-950/80 text-amber-300 border-amber-600/50'
+                  }`}>
+                    <ShieldCheck className="w-3 h-3" />
+                    <span>{activeCourse.testApprovalStatus || 'Pending Review'}</span>
+                    <ChevronDown className="w-2.5 h-2.5" />
+                  </span>
+
+                  {/* Dropdown for Admin Approval Actions */}
+                  <div className="absolute right-0 top-full mt-1 hidden group-hover:flex flex-col bg-zinc-900 border border-zinc-700 rounded-xl p-1.5 shadow-2xl z-30 min-w-[170px] space-y-1 animate-in fade-in">
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateApproval('Approved')}
+                      className="px-2.5 py-1.5 text-left text-[11px] font-bold text-emerald-400 hover:bg-emerald-950/50 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Approve Class
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateApproval('Requires Refinement')}
+                      className="px-2.5 py-1.5 text-left text-[11px] font-bold text-rose-400 hover:bg-rose-950/50 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <AlertCircle className="w-3.5 h-3.5" /> Request Refinements
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateApproval('Pending Review')}
+                      className="px-2.5 py-1.5 text-left text-[11px] font-bold text-amber-400 hover:bg-amber-950/50 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Clock className="w-3.5 h-3.5" /> Reset to Pending
+                    </button>
+                  </div>
+                </div>
+
+                {/* Strategy Telemetry HUD Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setShowLiveTelemetryHUD(!showLiveTelemetryHUD)}
+                  className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
+                    showLiveTelemetryHUD 
+                      ? 'bg-indigo-600/40 text-indigo-300 border-indigo-500/50' 
+                      : 'bg-white/10 text-zinc-400 border-white/10 hover:text-white'
+                  }`}
+                  title="Toggle Real-Time Strategy Telemetry HUD"
+                >
+                  <BarChart2 className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
 
@@ -1384,14 +1566,14 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
 
 
       {/* =========================================================================
-          BOTTOM SECTION: CLEAN COURSE DIRECTORY WITH CATEGORY DROPDOWN & VIEW TOGGLE
+          BOTTOM SECTION: DUAL LIBRARY DIRECTORY & AI CLASS EXECUTION CATALOG
       ========================================================================= */}
-      <section className="w-full bg-white rounded-2xl border border-slate-200 p-4 md:p-5 shadow-xs space-y-4">
+      <section className="w-full bg-white rounded-3xl border border-slate-200 p-5 md:p-6 shadow-sm space-y-5">
         
-        {/* Streamlined Toolbar: Filter Tabs + Category Dropdown on Left, View Switcher on Right */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+        {/* Streamlined Toolbar: Dual Library Sub-Navigation Tabs + Category Dropdown on Left, View Switcher on Right */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           
-          {/* Left Controls: Library Filter Tabs + Category Dropdown Filter */}
+          {/* Left Controls: Dual Library Sub-Navigation Tabs & Category Dropdown */}
           <div className="flex items-center gap-2.5 flex-wrap">
             
             {/* 1. Category Dropdown Filter */}
@@ -1402,7 +1584,7 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="pl-8 pr-8 py-1.5 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none cursor-pointer transition-colors appearance-none"
+                className="pl-8 pr-8 py-2 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none cursor-pointer transition-colors appearance-none shadow-2xs"
               >
                 {categoriesList.map(cat => (
                   <option key={cat} value={cat}>
@@ -1415,63 +1597,85 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
               </div>
             </div>
 
-            {/* 2. Filter Tabs ("All", "Tutorial", "AI Class") with dynamic counts */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+            {/* 2. Top Sub-Navigation Tabs for Dual Library Navigation */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold flex-wrap">
+              
+              {/* All Classes */}
               <button
-                onClick={() => setLibraryFilter('ALL')}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  libraryFilter === 'ALL'
+                onClick={() => setLibrarySectionTab('ALL')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                  librarySectionTab === 'ALL'
                     ? 'bg-white text-slate-900 shadow-xs font-black'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <span>All</span>
+                <span>All Classes</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                  libraryFilter === 'ALL' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700'
+                  librarySectionTab === 'ALL' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700'
                 }`}>{courses.length}</span>
               </button>
 
+              {/* Intelli Coach Classes */}
               <button
-                onClick={() => setLibraryFilter('TUTOR')}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  libraryFilter === 'TUTOR'
-                    ? 'bg-brand-900 text-white shadow-xs font-black'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <span>Tutorial</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                  libraryFilter === 'TUTOR' ? 'bg-white text-brand-900' : 'bg-slate-200 text-slate-700'
-                }`}>{courses.filter(c => c.libraryType === 'TUTOR' || (!c.name.includes('IELTS') && !c.name.includes('Social'))).length}</span>
-              </button>
-
-              <button
-                onClick={() => setLibraryFilter('AI')}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  libraryFilter === 'AI'
+                onClick={() => setLibrarySectionTab('INTELLI_COACH')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                  librarySectionTab === 'INTELLI_COACH'
                     ? 'bg-indigo-600 text-white shadow-xs font-black'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <span>AI Class</span>
+                <Cpu className="w-3.5 h-3.5" />
+                <span>Intelli Coach Classes</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                  libraryFilter === 'AI' ? 'bg-white text-indigo-900' : 'bg-slate-200 text-slate-700'
-                }`}>{courses.filter(c => c.libraryType === 'AI' || c.name.includes('IELTS') || c.name.includes('Social')).length}</span>
+                  librarySectionTab === 'INTELLI_COACH' ? 'bg-white text-indigo-900' : 'bg-slate-200 text-slate-700'
+                }`}>{intelliCoachCount}</span>
+              </button>
+
+              {/* Video + AI Answering Classes */}
+              <button
+                onClick={() => setLibrarySectionTab('VIDEO_AI')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                  librarySectionTab === 'VIDEO_AI'
+                    ? 'bg-purple-600 text-white shadow-xs font-black'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Video className="w-3.5 h-3.5" />
+                <span>Video + AI Answering</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                  librarySectionTab === 'VIDEO_AI' ? 'bg-white text-purple-900' : 'bg-slate-200 text-slate-700'
+                }`}>{videoAICount}</span>
+              </button>
+
+              {/* Faculty Tutorials */}
+              <button
+                onClick={() => setLibrarySectionTab('TUTOR')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                  librarySectionTab === 'TUTOR'
+                    ? 'bg-brand-900 text-white shadow-xs font-black'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Faculty Tutorials</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                  librarySectionTab === 'TUTOR' ? 'bg-white text-brand-900' : 'bg-slate-200 text-slate-700'
+                }`}>{tutorCount}</span>
               </button>
             </div>
             
-            <span className="text-xs text-slate-400 hidden lg:inline">
-              Showing {filteredCourses.length} courses
+            <span className="text-xs text-slate-400 hidden xl:inline">
+              Showing {filteredCourses.length} classes
             </span>
           </div>
 
-          {/* Right: View Toggle (Grid vs List) + Course Creator Action */}
-          <div className="flex items-center gap-2.5">
+          {/* Right: View Toggle (Grid vs List) + Creator Actions */}
+          <div className="flex items-center gap-2.5 shrink-0">
             {/* View Mode Switcher (Grid vs List) */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200">
               <button
                 onClick={() => setCourseViewMode('GRID')}
-                className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 text-xs font-bold ${
+                className={`p-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-xs font-bold ${
                   courseViewMode === 'GRID' 
                     ? 'bg-white text-brand-900 shadow-xs' 
                     : 'text-slate-500 hover:text-slate-900'
@@ -1484,7 +1688,7 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
 
               <button
                 onClick={() => setCourseViewMode('LIST')}
-                className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 text-xs font-bold ${
+                className={`p-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-xs font-bold ${
                   courseViewMode === 'LIST' 
                     ? 'bg-white text-brand-900 shadow-xs' 
                     : 'text-slate-500 hover:text-slate-900'
@@ -1497,51 +1701,60 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
             </div>
 
             <button
-              onClick={() => onNavigateTab?.('COURSE CREATE')}
-              className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+              onClick={() => onNavigateTab?.('AI COURSE CREATOR')}
+              className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-2xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
-              <PlusCircle className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Course Creator</span>
+              <Sparkles className="w-3.5 h-3.5" /> <span className="hidden sm:inline">AI Coach Creator</span>
             </button>
           </div>
         </div>
 
         {/* 1. GRID VIEW MODE */}
         {courseViewMode === 'GRID' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 animate-in fade-in">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-in fade-in">
             {filteredCourses.map((course) => {
               const isCurrentlyActive = course.id === activeCourseId;
               const isCourseAI = course.libraryType === 'AI' || course.name.includes('IELTS') || course.name.includes('Social');
+              const isVideoAI = course.aiLibrarySection === 'Video + AI Answering Classes' || (course.libraryType === 'AI' && course.name.includes('Video'));
 
               return (
                 <div
                   key={course.id}
                   onClick={() => selectCourse(course.id)}
-                  className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between group shadow-xs ${
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between group shadow-xs ${
                     isCurrentlyActive
-                      ? 'border-2 border-brand-600 bg-brand-50/30 shadow-sm ring-2 ring-brand-500/20'
-                      : 'bg-white border-slate-200 hover:border-brand-400 hover:shadow-sm'
+                      ? 'border-2 border-brand-600 bg-brand-50/40 shadow-md ring-2 ring-brand-500/20'
+                      : 'bg-white border-slate-200 hover:border-brand-400 hover:shadow-md'
                   }`}
                 >
                   <div>
-                    {/* Top Title Badge & Library Tag */}
-                    <div className="flex items-center justify-between mb-2">
-                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border truncate max-w-[110px] ${
-                        isCourseAI 
+                    {/* Top Badges & Approval Status */}
+                    <div className="flex items-center justify-between gap-1.5 mb-2.5">
+                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border truncate max-w-[140px] ${
+                        isVideoAI
+                          ? 'bg-purple-50 text-purple-700 border-purple-200'
+                          : isCourseAI 
                           ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
                           : 'bg-brand-50 text-brand-700 border-brand-100'
                       }`}>
-                        {isCourseAI ? 'AI Library' : 'Tutorial Library'}
+                        {course.aiLibrarySection || (isCourseAI ? 'Intelli Coach' : 'Faculty Tutorial')}
                       </span>
-                      {isCurrentlyActive && (
-                        <span className="text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-                          <CheckCircle2 className="w-3 h-3" /> Active
-                        </span>
-                      )}
+
+                      {/* Approval Status Badge */}
+                      <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase border shrink-0 ${
+                        course.testApprovalStatus === 'Approved'
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                          : course.testApprovalStatus === 'Requires Refinement'
+                          ? 'bg-rose-100 text-rose-800 border-rose-300'
+                          : 'bg-amber-100 text-amber-800 border-amber-300'
+                      }`}>
+                        {course.testApprovalStatus || 'Pending'}
+                      </span>
                     </div>
 
                     {/* Icon & Title */}
-                    <div className="flex items-start gap-2.5 mb-1.5">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
+                    <div className="flex items-start gap-2.5 mb-2">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
                         isCurrentlyActive 
                           ? 'bg-brand-600 text-white shadow-xs' 
                           : 'bg-slate-100 text-brand-700 group-hover:bg-brand-100'
@@ -1555,14 +1768,14 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
                           {course.name}
                         </h4>
                         <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">
-                          {course.subtitle || 'Enterprise certification track.'}
+                          {course.subtitle || 'Comprehensive certification pathway.'}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Course Metadata Specs */}
-                  <div className="mt-3 pt-2 border-t border-slate-100 space-y-1 text-[10px]">
+                  {/* Course Metadata Specs & AI START CLASS BUTTON */}
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 space-y-2 text-[10px]">
                     <div className="flex justify-between text-slate-600">
                       <span>Chapters:</span>
                       <span className="font-bold text-slate-900">{course.chapter} Modules</span>
@@ -1576,9 +1789,24 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
                       <span className="font-black text-brand-700">{course.fee}</span>
                     </div>
 
-                    <div className="pt-1.5 flex items-center justify-between text-[11px] font-black text-brand-600 group-hover:text-brand-800">
-                      <span>{isCurrentlyActive ? '● In Screen' : 'Open Class →'}</span>
-                      <SkipForward className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                    {/* Prominent AI Start Class Execution Button */}
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selectCourse(course.id);
+                          setIsPlaying(true);
+                        }}
+                        className={`w-full py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer ${
+                          isCurrentlyActive && isPlaying
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-gradient-to-r from-indigo-600 to-brand-600 hover:from-indigo-500 hover:to-brand-500 text-white'
+                        }`}
+                      >
+                        <Play className="w-3.5 h-3.5 fill-white" />
+                        <span>{isCurrentlyActive && isPlaying ? '● Active Test Class' : 'AI START CLASS'}</span>
+                      </button>
                     </div>
                   </div>
 
@@ -1590,23 +1818,24 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
 
         {/* 2. LIST VIEW MODE */}
         {courseViewMode === 'LIST' && (
-          <div className="flex flex-col divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden animate-in fade-in">
+          <div className="flex flex-col divide-y divide-slate-100 rounded-2xl border border-slate-200 overflow-hidden animate-in fade-in">
             {filteredCourses.map((course) => {
               const isCurrentlyActive = course.id === activeCourseId;
               const isCourseAI = course.libraryType === 'AI' || course.name.includes('IELTS') || course.name.includes('Social');
+              const isVideoAI = course.aiLibrarySection === 'Video + AI Answering Classes' || (course.libraryType === 'AI' && course.name.includes('Video'));
 
               return (
                 <div
                   key={course.id}
                   onClick={() => selectCourse(course.id)}
-                  className={`p-3 sm:px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all cursor-pointer ${
+                  className={`p-3.5 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all cursor-pointer ${
                     isCurrentlyActive
                       ? 'bg-brand-50/80 border-l-4 border-brand-600 font-medium'
                       : 'bg-white hover:bg-slate-50'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
                       isCurrentlyActive ? 'bg-brand-600 text-white' : 'bg-slate-100 text-brand-700'
                     }`}>
                       {course.name.charAt(0)}
@@ -1618,42 +1847,53 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
                         }`}>
                           {course.name}
                         </h4>
-                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${
-                          isCourseAI 
+                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                          isVideoAI
+                            ? 'bg-purple-50 text-purple-700 border-purple-200'
+                            : isCourseAI 
                             ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
                             : 'bg-brand-50 text-brand-700 border-brand-100'
                         }`}>
-                          {isCourseAI ? 'AI Class' : 'Tutorial'}
+                          {course.aiLibrarySection || (isCourseAI ? 'Intelli Coach' : 'Faculty Tutorial')}
                         </span>
-                        {isCurrentlyActive && (
-                          <span className="text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-                            <CheckCircle2 className="w-3 h-3" /> Active
-                          </span>
-                        )}
+                        
+                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase border ${
+                          course.testApprovalStatus === 'Approved'
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                            : course.testApprovalStatus === 'Requires Refinement'
+                            ? 'bg-rose-100 text-rose-800 border-rose-300'
+                            : 'bg-amber-100 text-amber-800 border-amber-300'
+                        }`}>
+                          {course.testApprovalStatus || 'Pending'}
+                        </span>
                       </div>
                       <p className="text-[10px] text-slate-500 truncate mt-0.5">{course.subtitle}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between sm:justify-end gap-4 text-xs shrink-0">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 text-xs shrink-0">
                     <div className="text-[11px] text-slate-500 font-mono hidden md:block">
                       {course.chapter} Chapters • {course.duration}
                     </div>
                     <div className="text-xs font-black text-brand-700">
                       {course.fee}
                     </div>
+                    
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         selectCourse(course.id);
+                        setIsPlaying(true);
                       }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
-                        isCurrentlyActive 
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs ${
+                        isCurrentlyActive && isPlaying
                           ? 'bg-emerald-600 text-white' 
-                          : 'bg-slate-100 hover:bg-brand-600 hover:text-white text-slate-700'
+                          : 'bg-indigo-600 hover:bg-indigo-500 text-white'
                       }`}
                     >
-                      {isCurrentlyActive ? 'Loaded' : 'Open'} <ArrowRight className="w-3 h-3" />
+                      <Play className="w-3 h-3 fill-white" />
+                      <span>{isCurrentlyActive && isPlaying ? 'In Test' : 'AI Start Class'}</span>
                     </button>
                   </div>
                 </div>
@@ -1663,7 +1903,6 @@ const LibraryAndClassRoom: React.FC<LibraryAndClassRoomProps> = ({ onNavigateTab
         )}
 
       </section>
-
 
       {/* =========================================================================
           MODALS: GOOGLE LENS, COMMAND PALETTE & SETTINGS
